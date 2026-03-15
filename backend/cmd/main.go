@@ -33,6 +33,11 @@ func main() {
 	r.GET("/entries/:id", entryHandler.GetEntry)
 	// Add other routes here later...
 
+	os.MkdirAll("./uploads", os.ModePerm)
+	r.Static("/uploads", "./uploads")
+
+	r.POST("/upload", entryHandler.UploadFiles) // API ใหม่สำหรับอัปโหลด
+
 	// 4. Get port from environment variable, default to 9090
 	port := os.Getenv("API_PORT")
 	log.Println("port = ", port)

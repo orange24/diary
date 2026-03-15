@@ -1,38 +1,45 @@
 // frontend/src/services/api.ts
+
 if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
   console.warn("Warning: NEXT_PUBLIC_API_BASE_URL is not defined in environment variables");
 }
 
-// Use environment variable from .env.local
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export interface Entry {
   id: number;
   title: string;
   content: string;
+  created_date: string; // เปลี่ยนจาก created_at เป็น created_date ตามหลังบ้าน
+  created_by: string;
+  images: string[];
 }
 
-// Fetch all entries from the Go Backend
-export const getEntries = async (): Promise<Entry[]> => {
-  const response = await fetch(`${API_BASE_URL}/entries`, {
-    cache: 'no-store' // Disable cache to get fresh data
-  });
-  
-  if (!response.ok) {
-    throw new Error("Failed to fetch entries");
-  }
-  
+// 1. ดึงรายการบันทึก
+export const getEntries = async (page: number = 1, limit: number = 10): Promise<Entry[]> => {
+  const response = await fetch(`${API_BASE_URL}/entries?page=${page}&limit=${limit}`);
+  if (!response.ok) throw new Error("Failed to fetch entries");
   return response.json();
 };
 
-// ... keep existing getEntries function
-export const createEntry = async (title: string, content: string): Promise<void> => {
+// 2. ดึงข้อมูลบันทึกตัวเดียว
+export const getEntry = async (id: number): Promise<Entry> => {
+  const response = await fetch(`${API_BASE_URL}/entries/${id}`);
+  if (!response.ok) throw new Error("Failed to fetch entry");
+  return response.json();
+};
+
+// 3. สร้างบันทึกใหม่
+export const createEntry = async (data: { 
+  title: string; 
+  content: string; 
+  created_by: string; 
+  images: string[] 
+}): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/entries`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ title, content }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   });
 
   if (!response.ok) {
@@ -40,6 +47,25 @@ export const createEntry = async (title: string, content: string): Promise<void>
   }
 };
 
+// 4. อัปเดตบันทึก
+export const updateEntry = async (
+  id: number, 
+  data: { title: string; content: string; created_by: string; images: string[] }
+): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/entries/${id}`, {
+    method: "PUT", // หรือ PATCH ตามที่ Backend ออกแบบไว้
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update entry");
+  }
+};
+
+// 5. ลบบันทึก
 export const deleteEntry = async (id: number): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/entries/${id}`, {
     method: "DELETE",
@@ -48,19 +74,4 @@ export const deleteEntry = async (id: number): Promise<void> => {
   if (!response.ok) {
     throw new Error("Failed to delete entry");
   }
-};
-
-export const getEntry = async (id: number): Promise<Entry> => {
-  const response = await fetch(`${API_BASE_URL}/entries/${id}`);
-  if (!response.ok) throw new Error("Failed to fetch entry");
-  return response.json();
-};
-
-export const updateEntry = async (id: number, title: string, content: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/entries/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, content }),
-  });
-  if (!response.ok) throw new Error("Failed to update entry");
 };
