@@ -4,8 +4,9 @@ import (
 	"diary_app/backend/config"
 	"diary_app/backend/internal/database"
 	"diary_app/backend/internal/handlers"
+	"diary_app/backend/internal/middleware"
 	"log"
-	"os" // Don't forget to import "os"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -20,31 +21,48 @@ func main() {
 	// 2. Initialize handlers with DB
 	entryHandler := &handlers.EntryHandler{DB: db}
 
-	// 3. Setup Routes
+	// 3. Setup Router (ใช้ Gin ทั้งหมด)
 	r := gin.Default()
 
-	// Configure CORS: Allow requests from the frontend (usually port 3000)
-	r.Use(cors.Default())
+	// Configure CORS
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"}, // URL ของ Next.js
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
-	r.GET("/entries", entryHandler.GetEntries)
-	r.POST("/entries", entryHandler.CreateEntry)
-	r.DELETE("/entries/:id", entryHandler.DeleteEntry)
-	r.PUT("/entries/:id", entryHandler.UpdateEntry)
-	r.GET("/entries/:id", entryHandler.GetEntry)
-	// Add other routes here later...
-
+	// เตรียมโฟลเดอร์ Uploads
 	os.MkdirAll("./uploads", os.ModePerm)
 	r.Static("/uploads", "./uploads")
 
-	r.POST("/upload", entryHandler.UploadFiles) // API ใหม่สำหรับอัปโหลด
+	// --- Public Routes (ไม่ต้องล็อกอิน) ---
+	r.POST("/register", entryHandler.Register)
+	r.POST("/login", entryHandler.Login)
 
-	// 4. Get port from environment variable, default to 9090
+	// --- Protected Routes (ต้องมี JWT Token) ---
+	// เราจะใช้ Group ของ Gin เพื่อให้ Middleware ครอบคลุมเฉพาะกลุ่มนี้
+	authorized := r.Group("/")
+	authorized.Use(func(c *gin.Context) {
+		// แปลง Middleware มาตรฐานให้เข้ากับ Gin
+		// หรือถ้าคุณแก้ middleware/auth.go เป็นแบบ Gin แล้ว ให้ใส่ตรงนี้ได้เลย
+		middleware.AuthMiddleware(c)
+	})
+	{
+		authorized.GET("/entries", entryHandler.GetEntries)
+		authorized.POST("/entries", entryHandler.CreateEntry)
+		authorized.DELETE("/entries/:id", entryHandler.DeleteEntry)
+		authorized.PUT("/entries/:id", entryHandler.UpdateEntry)
+		authorized.GET("/entries/:id", entryHandler.GetEntry)
+		authorized.POST("/upload", entryHandler.UploadFiles)
+	}
+
+	// 4. Start server
 	port := os.Getenv("API_PORT")
-	log.Println("port = ", port)
 	if port == "" {
 		port = "9090"
 	}
-
-	// Start server
+	log.Println("Server running on port:", port)
 	r.Run(":" + port)
 }

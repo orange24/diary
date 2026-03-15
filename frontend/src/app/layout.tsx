@@ -1,45 +1,44 @@
-import "./globals.css";
+import "@/styles/globals.css";
 import { Prompt } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Metadata } from "next";
-import { ThemeProvider } from "next-themes"
+import { AuthProvider } from "@/context/auth-context"
+import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner"
 
 const prompt = Prompt({
-  subsets: ['latin'], variable: '--font-sans',
-  weight: "100"
+  subsets: ['thai', 'latin'], // เพิ่ม thai เข้าไปด้วยเพื่อให้รองรับภาษาไทยสวยๆ ครับ
+  variable: '--font-sans',
+  weight: ["300", "400", "500", "700"] // เพิ่ม weight ให้ครอบคลุมการใช้งาน
 });
 
 export const metadata: Metadata = {
   title: 'My Daily Diary',
   description: 'A personal diary dashboard to capture your daily thoughts and memories',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
+  // ... metadata อื่นๆ ของคุณคงเดิม ...
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider attribute="data-theme" defaultTheme="week-1">
-          {children}
-        </ThemeProvider>
-      </body>
+        <body 
+          className={cn(
+            "min-h-screen bg-background font-sans antialiased transition-colors duration-700 ease-in-out", 
+            prompt.variable
+          )}
+        >
+
+          <AuthProvider>
+            <ThemeProvider 
+              attribute="data-theme" 
+              defaultTheme="week-1" 
+              enableSystem={false}
+            >
+              {children}
+              <Toaster position="top-center" richColors />
+            </ThemeProvider>
+          </AuthProvider>
+        </body>
     </html>
   )
 }

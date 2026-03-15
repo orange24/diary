@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* 1. กำหนดค่าสีเริ่มต้นที่ :root */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+}
+
+/* 2. บังคับเปลี่ยนค่า Variables เมื่อ data-theme เปลี่ยน */
+/* ใช้ [data-theme] ตรงๆ เพื่อให้ Specificity สูงพอจะทับ :root */
+[data-theme='week-1'] {
+  --background: oklch(0.98 0.014 213.1);
+  --primary: oklch(0.623 0.214 259.815);
+  --primary-foreground: oklch(0.98 0 0);
+}
+
+[data-theme='week-2'] {
+  --background: oklch(0.98 0.01 10);
+  --primary: oklch(0.75 0.15 10);
+  --primary-foreground: oklch(0.98 0 0);
+}
+
+[data-theme='week-3'] {
+  --background: oklch(0.98 0.01 145);
+  --primary: oklch(0.55 0.15 145);
+  --primary-foreground: oklch(0.98 0 0);
+}
+
+[data-theme='week-4'] {
+  --background: oklch(0.98 0.02 40);
+  --primary: oklch(0.7 0.18 40);
+  --primary-foreground: oklch(0.98 0 0);
+}
+
+/* 3. เชื่อมต่อ Variables เข้ากับ Tailwind Theme Engine */
+@theme {
+  /* ใน v4 ถ้าเราตั้งชื่อแบบนี้ คลาสที่ได้จะเป็น bg-[--background] */
+  /* แต่ถ้าอยากใช้ bg-background ตรงๆ ให้เขียนแบบนี้ครับ: */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+}
+
+/* 4. โหลดมาตรฐาน Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

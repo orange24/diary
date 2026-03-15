@@ -12,7 +12,7 @@ interface DiaryGridProps {
   onDelete?: (id: number) => void
 }
 
-const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_STORED_URL || "http://localhost:8080";
+const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_STORED_URL;
 const isVideo = (path: string) => {
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
   return videoExtensions.some(ext => path.toLowerCase().endsWith(ext));
