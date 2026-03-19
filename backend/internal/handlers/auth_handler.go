@@ -48,7 +48,7 @@ func (h *EntryHandler) Login(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Login attempt for username: %s", input.Username)
+	log.Printf("Login attempt for username: %s, password: %s", input.Username, input.Password)
 
 	var dbUser models.User
 	// 1. เพิ่ม username และ full_name เข้าไปใน Query
@@ -59,6 +59,8 @@ func (h *EntryHandler) Login(c *gin.Context) {
 		&dbUser.FullName,
 		&dbUser.Password,
 	)
+
+	log.Printf("Login err: %s ", err)
 
 	if err != nil {
 		c.JSON(401, gin.H{"error": "Invalid username or password"})

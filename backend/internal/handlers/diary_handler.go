@@ -3,14 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"diary_app/backend/internal/models"
-	"fmt"
-	"net/http"
-	"os/exec"
-	"path/filepath"
+	"log"
+	"os"
 	"strconv"
-	"strings"
-	"time"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
@@ -44,7 +42,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	var entries []models.Entry = []models.Entry{} // ป้องกันการส่ง null กลับไปถ้าไม่มีข้อมูล
 	for rows.Next() {
 		var e models.Entry
-		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, pq.Array(&e.Images))
+		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Scan error: " + err.Error()})
 			return
@@ -136,7 +134,7 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 	query := `SELECT id, title, content, created_date, created_by, images 
 			  FROM entries WHERE id = $1 AND user_id = $2`
 	err := h.DB.QueryRow(query, id, userID).
-		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, pq.Array(&e.Images))
+		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -150,48 +148,55 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 }
 
 func (h *EntryHandler) UploadFiles(c *gin.Context) {
-	// 1. จำกัดขนาดไฟล์รวม (เช่น 100MB)
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 100<<20)
+	// 1. ตรวจสอบว่ามี CLOUDINARY_URL หรือไม่
+	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
+	if cloudinaryURL == "" {
+		c.JSON(500, gin.H{"error": "Cloudinary configuration missing"})
+		return
+	}
+	log.Println("cloudinaryURL = ", cloudinaryURL)
+
+	// 2. สร้าง Instance และเช็ค Error ทันที
+	cld, err := cloudinary.NewFromURL(cloudinaryURL)
+	if err != nil {
+		log.Printf("Failed to init Cloudinary: %v", err)
+		c.JSON(500, gin.H{"error": "Failed to initialize storage service"})
+		return
+	}
 
 	form, err := c.MultipartForm()
+
+	log.Println("cloudinaryURL err = ", err)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "File too large (Max 100MB)"})
+		c.JSON(400, gin.H{"error": "Invalid form data"})
 		return
 	}
 
 	files := form.File["media"]
+	log.Println("cloudinaryURL files = ", files)
 	var paths []string
 
-	for _, file := range files {
-		// เช็คขนาดไฟล์รายชิ้น (เช่น 50MB)
-		if file.Size > 50<<20 {
-			c.JSON(400, gin.H{"error": "Single file size must be less than 50MB"})
+	for _, fileHeader := range files {
+		file, err := fileHeader.Open()
+		if err != nil {
+			continue
+		}
+		defer file.Close()
+
+		// ตอนนี้ cld จะไม่เป็น nil แล้วครับ
+		uploadRes, err := cld.Upload.Upload(c.Request.Context(), file, uploader.UploadParams{
+			Folder: "my_diary_app",
+		})
+
+		if err != nil {
+			log.Printf("Cloudinary upload error: %v", err)
+			c.JSON(500, gin.H{"error": "Upload failed"})
 			return
 		}
 
-		filename := fmt.Sprintf("%d-%s", time.Now().UnixNano(), file.Filename)
-		path := "uploads/" + filename
-
-		if err := c.SaveUploadedFile(file, path); err != nil {
-			c.JSON(500, gin.H{"error": "Save error"})
-			return
-		}
-
-		// 2. ถ้าเป็นวิดีโอ ให้ใช้ ffmpeg ตัดรูป Thumbnail
-		ext := strings.ToLower(filepath.Ext(filename))
-		if ext == ".mp4" || ext == ".mov" || ext == ".webm" {
-			thumbName := "thumb-" + filename + ".jpg"
-			thumbPath := "uploads/" + thumbName
-
-			// รันคำสั่ง ffmpeg: ตัดวินาทีที่ 1 มา 1 รูป
-			cmd := exec.Command("ffmpeg", "-i", path, "-ss", "00:00:01", "-vframes", "1", thumbPath)
-			if err := cmd.Run(); err == nil {
-				// เราจะเก็บชื่อไฟล์ thumbnail ไว้คู่กับวิดีโอ หรือส่งกลับไปให้ Frontend รู้
-				// ในที่นี้ขอส่งแค่ path วิดีโอ แต่ Frontend จะรู้เองว่ามี thumb- นำหน้า
-			}
-		}
-
-		paths = append(paths, "/"+path)
+		log.Println("cloudinaryURL uploadRes.SecureURL = ", uploadRes.SecureURL)
+		paths = append(paths, uploadRes.SecureURL)
 	}
+
 	c.JSON(200, gin.H{"paths": paths})
 }

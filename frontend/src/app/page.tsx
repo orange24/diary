@@ -47,28 +47,39 @@ export default function DiaryDashboard() {
        router.push("/login")
     }
   }, [token, isLoading, router])
-  
 
-  const loadMoreEntries = async (reset = false) => {
-    // ถ้าไม่มี Token หรือกำลังโหลดอยู่ ให้หยุดทำงาน
-    if (!token || loading) return 
-    if (!reset && !hasMore) return
+const loadMoreEntries = async (reset = false) => {
+  if (!token || loading) return 
+  if (!reset && !hasMore) return
+  
+  setLoading(true)
+  try {
+    const currentPage = reset ? 1 : page
+    const response = await getEntries(currentPage, 10, token)
     
-    setLoading(true)
-    try {
-      const currentPage = reset ? 1 : page
-      const newEntries = await getEntries(currentPage, 10, token)
-      
-      if (newEntries.length < 10) setHasMore(false)
-      
-      setEntries((prev) => reset ? newEntries : [...prev, ...newEntries])
-      setPage(currentPage + 1)
-    } catch (error) {
-      console.error("Load error:", error)
-    } finally {
-      setLoading(false)
+    // ✅ จุดสำคัญ: เช็คให้ชัวร์ว่าข้อมูลที่ได้มาคือ Array
+    // ถ้า Backend ส่ง { error: "..." } มา มันจะตกลงไปที่ค่า [] แทน
+    const newEntries = Array.isArray(response) ? response : []
+    
+    if (newEntries.length < 10) setHasMore(false)
+    
+    setEntries((prev) => {
+      const currentPrev = Array.isArray(prev) ? prev : []
+      return reset ? newEntries : [...currentPrev, ...newEntries]
+    })
+    setPage(currentPage + 1)
+  } catch (error: any) {
+    console.error("Load error details:", error)
+    // ถ้าเจอ 401 ให้เด้งไป Login
+    if (error?.status === 401 || error?.response?.status === 401) {
+      router.push("/login")
     }
+    // ✅ กรณี Error ให้เซ็ตเป็น Array ว่างเพื่อไม่ให้หน้าจอขาว
+    if (reset) setEntries([]) 
+  } finally {
+    setLoading(false)
   }
+}
 
   // Infinite Scroll
   useEffect(() => {
@@ -134,7 +145,7 @@ export default function DiaryDashboard() {
           setIsModalOpen(true);
         }} 
         onLogout={handleLogout}
-        userName={user?.full_name} // ✅ ส่งชื่อไปโชว์ที่ Header ได้เลย
+        userName={user?.full_name}
       />
 
       <main className="container mx-auto px-4 py-8">

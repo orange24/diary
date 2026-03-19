@@ -18,7 +18,23 @@ interface DiaryEntryCardProps {
   onDelete?: (id: string) => void
 }
 
-const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_STORED_URL;
+const isVideo = (path: string) => {
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
+  return videoExtensions.some(ext => path.toLowerCase().endsWith(ext));
+};
+
+const getDisplayMedia = (path: string) => {
+  // ✅ ถ้า path เริ่มต้นด้วย http แสดงว่าเป็นรูปจาก Cloud (Cloudinary)
+  if (path.startsWith('http')) {
+    if (isVideo(path)) {
+      return path.replace(/\.[^/.]+$/, ".jpg"); 
+    }
+    return path;
+  }
+  
+  // กรณีรูปเก่าที่ยังอยู่ในเครื่องเดิม (ถ้ามี)
+  return `${process.env.NEXT_PUBLIC_STORED_URL}${path}`;
+};
 
 export function DiaryEntryCard({ entry, onEdit, onDelete }: DiaryEntryCardProps) {
   console.log(`Entry ID: ${entry.id} | Images:`, entry.images);
@@ -38,7 +54,7 @@ export function DiaryEntryCard({ entry, onEdit, onDelete }: DiaryEntryCardProps)
         {entry.images && entry.images.length > 0 && (
           <div className="relative w-full h-48 overflow-hidden rounded-t-lg bg-gray-100">
             <img
-              src={`${IMAGE_BASE_URL}${entry.images[0]}`}
+              src={getDisplayMedia(`${entry.images[0]}`)}
               alt={entry.title}
               className="w-full h-full object-cover"
             />

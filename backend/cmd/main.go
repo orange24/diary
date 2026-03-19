@@ -59,7 +59,8 @@ func main() {
 	}
 
 	// 4. Start server
-	port := os.Getenv("API_PORT")
+	// port := os.Getenv("API_PORT")
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "9090"
 	}

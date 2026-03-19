@@ -3,16 +3,44 @@ version: '3.8'
 services:
   db:
     image: postgres:16
-    container_name: my-postgres-db
+    container_name: diary-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 6vT008KmEwOdBv3Q
       POSTGRES_DB: diary
     ports:
       - "5433:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - diary_app_postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: diary-backend
+    restart: always
+    ports:
+      - "9090:8888"
+    environment:
+      - DATABASE_URL=postgresql://postgres:6vT008KmEwOdBv3Q@db.bedjoqhraahwojltjbce.supabase.co:5432/diary?sslmode=disable
+      - CLOUDINARY_URL=cloudinary://979128287331962:yHPWFvWuDSlI82F2mLR1WfbgyLw@dsk0kjgsl
+      - PORT=8888
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: diary-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=https://diary-backend-847701498835.asia-southeast1.run.app
+      - API_BASE_URL=https://diary-backend-847701498835.asia-southeast1.run.app
+      - NEXT_PUBLIC_STORED_URL=https://diary-backend-847701498835.asia-southeast1.run.app
+    depends_on:
+      - backend
 
 volumes:
-  db-data:
+  diary_app_postgres_data:
+    external: true
+    name: diary_app_db-data
