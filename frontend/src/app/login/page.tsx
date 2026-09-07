@@ -58,13 +58,16 @@ export default function LoginPage() {
 
   // สร้างฟังก์ชันช่วยเลือก Class สำหรับ Shake และ Focus Color
   const getErrorClass = (fieldName: "username" | "password") => {
-    return form.formState.errors[fieldName] 
-      ? "border-red-500 focus-visible:ring-red-500 animate-shake" 
-      : "focus-visible:ring-primary";
+    return form.formState.errors[fieldName]
+      ? "border-red-500 focus-visible:ring-red-500 animate-shake"
+      : "border-neutral-200 focus-visible:ring-logo";
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    // Login page is pinned to a light, white look regardless of the app's
+    // dark/light theme toggle — hence literal neutral-* colors below instead
+    // of the theme-reactive bg-background / text-muted-foreground tokens.
+    <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
       {/* เพิ่ม CSS สำหรับสั่นแบบ On-the-fly ถ้าไม่ได้แก้ tailwind.config */}
       <style jsx global>{`
         @keyframes shake {
@@ -77,27 +80,27 @@ export default function LoginPage() {
         }
       `}</style>
 
-      <Card className="w-full max-w-md shadow-2xl border-primary/20 rounded-3xl overflow-hidden bg-card/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md shadow-2xl border-neutral-200 rounded-3xl overflow-hidden bg-white">
         <CardHeader className="pt-8">
-          <CardTitle className="text-3xl font-bold text-center text-primary tracking-tight">
+          <CardTitle className="text-3xl font-bold text-center text-neutral-900 tracking-tight">
             Diary Login
           </CardTitle>
-          <p className="text-center text-muted-foreground text-sm mt-2">เข้าสู่ระบบเพื่อบันทึกเรื่องราวของคุณ</p>
+          <p className="text-center text-neutral-500 text-sm mt-2">เข้าสู่ระบบเพื่อบันทึกเรื่องราวของคุณ</p>
         </CardHeader>
         <CardContent className="p-8">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
+
               <FormField
                 control={form.control}
                 name="username"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input 
-                        placeholder="Username" 
-                        {...field} 
-                        className={`rounded-xl py-6 px-4 bg-background transition-all duration-200 border-2 ${getErrorClass("username")}`}
+                      <Input
+                        placeholder="Username"
+                        {...field}
+                        className={`rounded-xl py-6 px-4 bg-white text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("username")}`}
                       />
                     </FormControl>
                     <FormMessage className="text-[12px] font-bold text-red-500 ml-1 mt-1 italic" />
@@ -111,11 +114,11 @@ export default function LoginPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Password" 
-                        {...field} 
-                        className={`rounded-xl py-6 px-4 bg-background transition-all duration-200 border-2 ${getErrorClass("password")}`}
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        {...field}
+                        className={`rounded-xl py-6 px-4 bg-white text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("password")}`}
                       />
                     </FormControl>
                     <FormMessage className="text-[12px] font-bold text-red-500 ml-1 mt-1 italic" />
@@ -123,18 +126,18 @@ export default function LoginPage() {
                 )}
               />
 
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 py-7 rounded-xl text-lg font-bold transition-all shadow-lg active:scale-95 hover:shadow-primary/25"
+              <Button
+                type="submit"
+                className="w-full bg-logo text-logo-foreground hover:bg-logo/90 py-7 rounded-xl text-lg font-bold transition-all shadow-lg active:scale-95 hover:shadow-logo/25"
               >
                 Sign In
               </Button>
 
-              <div className="text-sm text-muted-foreground text-center pt-2">
+              <div className="text-sm text-neutral-500 text-center pt-2">
                 Don't have an account?{' '}
-                <Link 
-                  href="/register" 
-                  className="text-primary font-bold hover:underline decoration-2 underline-offset-4"
+                <Link
+                  href="/register"
+                  className="text-logo font-bold hover:underline decoration-2 underline-offset-4"
                 >
                   Sign Up
                 </Link>
