@@ -91,7 +91,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl border-neutral-200 rounded-3xl overflow-hidden bg-white">
         <CardHeader className="pt-8">
           <CardTitle className="text-3xl font-bold text-center text-neutral-900 tracking-tight">
-            Papymory Login
+            <span className="uppercase text-logo">Papymory</span> Login
           </CardTitle>
           <p className="text-center text-neutral-500 text-sm mt-2">เข้าสู่ระบบเพื่อบันทึกเรื่องราวของคุณ</p>
         </CardHeader>
