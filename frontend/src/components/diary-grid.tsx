@@ -7,8 +7,7 @@ import { Pencil, Trash2, X, ChevronLeft, ChevronRight, PlayCircle, Images } from
 import { Entry } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
-import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
-import { PAGE_WIDTH } from "@/types/scrapbook"
+import { ScrapbookPreview } from "@/components/scrapbook/ScrapbookPreview"
 
 interface DiaryGridProps {
   entries: Entry[]
@@ -121,14 +120,7 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
 
           <CardContent className="space-y-4">
             {isScrapbook ? (
-              <div className="overflow-hidden rounded-lg border border-border" style={{ maxHeight: 320 }}>
-                <ScrapbookEditor
-                  elements={entry.layout!.elements}
-                  onChange={() => {}}
-                  editable={false}
-                  scale={320 / PAGE_WIDTH}
-                />
-              </div>
+              <ScrapbookPreview elements={entry.layout!.elements} maxHeight={320} />
             ) : (
               <div
                 className="prose dark:prose-invert max-w-none text-muted-foreground"
