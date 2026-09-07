@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import Moveable from "react-moveable"
 import {
   ScrapElement,
@@ -24,10 +24,32 @@ interface ScrapbookEditorProps {
   scale?: number
 }
 
-export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1 }: ScrapbookEditorProps) {
+export function ScrapbookEditor({ elements, onChange, editable, token, scale: scaleProp }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [extraHeight, setExtraHeight] = useState(0)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [autoScale, setAutoScale] = useState(1)
+
+  // Callers that already know the target width (e.g. the read-only card
+  // preview) pass `scale` explicitly. Otherwise — notably the editable
+  // dialog — fit the canvas to whatever width the container actually has,
+  // so a wider modal doesn't leave the page stranded at a fixed 794px.
+  useLayoutEffect(() => {
+    if (scaleProp !== undefined) return
+    const el = containerRef.current
+    if (!el) return
+    setAutoScale(el.getBoundingClientRect().width / PAGE_WIDTH)
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) setAutoScale(entry.contentRect.width / PAGE_WIDTH)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [scaleProp])
+
+  const scale = scaleProp ?? autoScale
 
   const canvasHeight = useMemo(
     () => Math.max(PAGE_HEIGHT_MIN, PAGE_HEIGHT_MIN + extraHeight, ...elements.map((e) => e.y + e.height + 80)),
@@ -113,7 +135,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
   }
 
   return (
-    <div>
+    <div ref={containerRef}>
       {editable && (
         <Toolbar
           selectedElement={selectedElement}
