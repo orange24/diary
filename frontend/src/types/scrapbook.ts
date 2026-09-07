@@ -35,6 +35,7 @@ export interface ScrapbookLayout {
 export const PAGE_WIDTH = 794
 export const PAGE_HEIGHT_MIN = 1123
 export const FONT_OPTIONS = ["Prompt", "Georgia", "Courier New"] as const
+export const NEW_TEXT_PLACEHOLDER = "พิมพ์ข้อความที่นี่..."
 
 export function newElementId(): string {
   return `el_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`

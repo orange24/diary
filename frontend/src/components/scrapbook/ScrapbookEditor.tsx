@@ -8,6 +8,7 @@ import {
   ImageScrapElement,
   PAGE_WIDTH,
   PAGE_HEIGHT_MIN,
+  NEW_TEXT_PLACEHOLDER,
   newElementId,
 } from "@/types/scrapbook"
 import { TextElement } from "./TextElement"
@@ -48,7 +49,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
       height: 100,
       rotation: 0,
       zIndex: elements.length + 1,
-      text: "พิมพ์ข้อความที่นี่...",
+      text: NEW_TEXT_PLACEHOLDER,
       color: "#222222",
       fontFamily: "Prompt",
       fontSize: 18,
@@ -166,7 +167,9 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
                 // Not yet selected (Moveable isn't attached until the first click's
                 // state update re-renders), so a click-and-drag in one motion would
                 // otherwise fall through to the browser's native text-selection drag.
+                // WebkitUserSelect covers Safari < 17, which ignores unprefixed user-select.
                 userSelect: editable && editingId !== el.id ? "none" : "auto",
+                WebkitUserSelect: editable && editingId !== el.id ? "none" : "auto",
               }}
             >
               {el.type === "text" ? (
