@@ -49,21 +49,52 @@ export interface StickerOption {
   aspect: number // width / height, so a placed sticker keeps its natural proportions
 }
 
-// Built-in decorative stickers shipped with the app (frontend/public/stickers/).
+export interface StickerPack {
+  id: string
+  name: string
+  stickers: StickerOption[]
+}
+
+// Built-in decorative stickers shipped with the app (frontend/public/stickers/),
+// grouped into LINE-style packs the user switches between in the picker.
 // Unlike uploaded photos, these are static assets — no backend/Cloudinary upload needed.
-export const STICKERS: StickerOption[] = [
-  { id: "beary-happy", label: "Beary Happy", src: "/stickers/beary-happy.png", aspect: 321 / 400 },
-  { id: "sweet-dreams", label: "Sweet Dreams", src: "/stickers/sweet-dreams.png", aspect: 380 / 400 },
-  { id: "rawr-fun-day", label: "Rawr! Fun Day", src: "/stickers/rawr-fun-day.png", aspect: 378 / 400 },
-  { id: "sweet", label: "Sweet!", src: "/stickers/sweet.png", aspect: 266 / 400 },
-  { id: "cosy-vibe", label: "Cosy Vibe", src: "/stickers/cosy-vibe.png", aspect: 328 / 400 },
-  { id: "stay-sharp", label: "Stay Sharp", src: "/stickers/stay-sharp.png", aspect: 387 / 400 },
-  { id: "happy-rain", label: "Happy Rain", src: "/stickers/happy-rain.png", aspect: 362 / 400 },
-  { id: "study-time", label: "Study Time", src: "/stickers/study-time.png", aspect: 400 / 387 },
-  { id: "yum-day", label: "Yum Day", src: "/stickers/yum-day.png", aspect: 291 / 400 },
-  { id: "beach-day", label: "Beach Day", src: "/stickers/beach-day.png", aspect: 387 / 400 },
-  { id: "capture-moments", label: "Capture Moments", src: "/stickers/capture-moments.png", aspect: 400 / 366 },
-  { id: "todays-bloom", label: "Today's Bloom", src: "/stickers/todays-bloom.png", aspect: 331 / 400 },
+export const STICKER_PACKS: StickerPack[] = [
+  {
+    id: "diary-moments",
+    name: "Diary Moments",
+    stickers: [
+      { id: "beary-happy", label: "Beary Happy", src: "/stickers/pack1/beary-happy.png", aspect: 317 / 400 },
+      { id: "sweet-dreams", label: "Sweet Dreams", src: "/stickers/pack1/sweet-dreams.png", aspect: 360 / 400 },
+      { id: "rawr-fun-day", label: "Rawr! Fun Day", src: "/stickers/pack1/rawr-fun-day.png", aspect: 366 / 400 },
+      { id: "sweet", label: "Sweet!", src: "/stickers/pack1/sweet.png", aspect: 293 / 400 },
+      { id: "cosy-vibe", label: "Cosy Vibe", src: "/stickers/pack1/cosy-vibe.png", aspect: 400 / 396 },
+      { id: "stay-sharp", label: "Stay Sharp", src: "/stickers/pack1/stay-sharp.png", aspect: 334 / 400 },
+      { id: "happy-rain", label: "Happy Rain", src: "/stickers/pack1/happy-rain.png", aspect: 374 / 400 },
+      { id: "study-time", label: "Study Time", src: "/stickers/pack1/study-time.png", aspect: 400 / 385 },
+      { id: "yum-day", label: "Yum Day", src: "/stickers/pack1/yum-day.png", aspect: 356 / 400 },
+      { id: "beach-day", label: "Beach Day", src: "/stickers/pack1/beach-day.png", aspect: 389 / 400 },
+      { id: "capture-moments", label: "Capture Moments", src: "/stickers/pack1/capture-moments.png", aspect: 400 / 340 },
+      { id: "todays-bloom", label: "Today's Bloom", src: "/stickers/pack1/todays-bloom.png", aspect: 352 / 400 },
+    ],
+  },
+  {
+    id: "cute-everyday",
+    name: "Cute Everyday",
+    stickers: [
+      { id: "good-boy", label: "Good Boy", src: "/stickers/pack2/good-boy.png", aspect: 276 / 400 },
+      { id: "bubble-boba", label: "Bubble Boba", src: "/stickers/pack2/bubble-boba.png", aspect: 354 / 400 },
+      { id: "guac-on", label: "Guac On", src: "/stickers/pack2/guac-on.png", aspect: 288 / 400 },
+      { id: "perfect-pair", label: "Perfect Pair", src: "/stickers/pack2/perfect-pair.png", aspect: 352 / 400 },
+      { id: "cosmic-cutie", label: "Cosmic Cutie", src: "/stickers/pack2/cosmic-cutie.png", aspect: 400 / 346 },
+      { id: "comfy-toes", label: "Comfy Toes", src: "/stickers/pack2/comfy-toes.png", aspect: 378 / 400 },
+      { id: "matcha-love", label: "Matcha Love", src: "/stickers/pack2/matcha-love.png", aspect: 400 / 387 },
+      { id: "snapshot", label: "Snapshot!", src: "/stickers/pack2/snapshot.png", aspect: 368 / 400 },
+      { id: "socks-appeal", label: "Socks Appeal", src: "/stickers/pack2/socks-appeal.png", aspect: 367 / 400 },
+      { id: "daily-bread", label: "Daily Bread", src: "/stickers/pack2/daily-bread.png", aspect: 392 / 400 },
+      { id: "wistful-star", label: "Wistful Star", src: "/stickers/pack2/wistful-star.png", aspect: 400 / 332 },
+      { id: "ocean-pal", label: "Ocean Pal", src: "/stickers/pack2/ocean-pal.png", aspect: 381 / 400 },
+    ],
+  },
 ]
 
 export function newElementId(): string {

@@ -4,7 +4,8 @@ import { useRef, useState } from "react"
 import { Type, ImagePlus, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine, Sticker } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ScrapElement, StickerOption, FONT_OPTIONS, STICKERS } from "@/types/scrapbook"
+import { ScrapElement, StickerOption, FONT_OPTIONS } from "@/types/scrapbook"
+import { StickerPicker } from "./StickerPicker"
 
 interface ToolbarProps {
   selectedElement: ScrapElement | null
@@ -63,24 +64,13 @@ export function Toolbar({
             <Sticker className="size-4 mr-1.5" /> สติกเกอร์
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80" align="start">
-          <div className="grid grid-cols-4 gap-2">
-            {STICKERS.map((sticker) => (
-              <button
-                key={sticker.id}
-                type="button"
-                title={sticker.label}
-                onClick={() => {
-                  onAddSticker(sticker)
-                  setStickerPickerOpen(false)
-                }}
-                className="flex items-center justify-center rounded-lg border border-transparent p-1 hover:border-border hover:bg-accent transition-colors"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={sticker.src} alt={sticker.label} className="size-14 object-contain" />
-              </button>
-            ))}
-          </div>
+        <PopoverContent className="w-auto" align="start">
+          <StickerPicker
+            onSelect={(sticker) => {
+              onAddSticker(sticker)
+              setStickerPickerOpen(false)
+            }}
+          />
         </PopoverContent>
       </Popover>
 
