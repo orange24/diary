@@ -6,6 +6,7 @@ import {
   ScrapElement,
   TextScrapElement,
   ImageScrapElement,
+  StickerOption,
   PAGE_WIDTH,
   PAGE_HEIGHT_MIN,
   PAGE_HEIGHT_STEP,
@@ -116,6 +117,24 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
     setSelectedId(newElement.id)
   }
 
+  const handleAddSticker = (sticker: StickerOption) => {
+    const offset = (elements.length % 5) * 20
+    const width = 140
+    const newElement: ImageScrapElement = {
+      id: newElementId(),
+      type: "image",
+      x: 40 + offset,
+      y: 40 + offset,
+      width,
+      height: Math.round(width / sticker.aspect),
+      rotation: 0,
+      zIndex: elements.length + 1,
+      src: sticker.src,
+    }
+    onChange([...elements, newElement])
+    setSelectedId(newElement.id)
+  }
+
   const handleDeleteSelected = () => {
     if (!selectedId) return
     onChange(elements.filter((e) => e.id !== selectedId))
@@ -142,6 +161,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
           selectedElement={selectedElement}
           onAddText={handleAddText}
           onAddImageFile={handleAddImageFile}
+          onAddSticker={handleAddSticker}
           onUpdateSelected={(patch) => selectedId && updateElement(selectedId, patch)}
           onDeleteSelected={handleDeleteSelected}
           onBringToFront={handleBringToFront}

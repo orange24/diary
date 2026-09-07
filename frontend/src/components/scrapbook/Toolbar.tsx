@@ -1,14 +1,16 @@
 "use client"
 
-import { useRef } from "react"
-import { Type, ImagePlus, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine } from "lucide-react"
+import { useRef, useState } from "react"
+import { Type, ImagePlus, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine, Sticker } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ScrapElement, FONT_OPTIONS } from "@/types/scrapbook"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ScrapElement, StickerOption, FONT_OPTIONS, STICKERS } from "@/types/scrapbook"
 
 interface ToolbarProps {
   selectedElement: ScrapElement | null
   onAddText: () => void
   onAddImageFile: (file: File) => void
+  onAddSticker: (sticker: StickerOption) => void
   onUpdateSelected: (patch: Partial<ScrapElement>) => void
   onDeleteSelected: () => void
   onBringToFront: () => void
@@ -22,6 +24,7 @@ export function Toolbar({
   selectedElement,
   onAddText,
   onAddImageFile,
+  onAddSticker,
   onUpdateSelected,
   onDeleteSelected,
   onBringToFront,
@@ -31,6 +34,7 @@ export function Toolbar({
   canRemoveSpace,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [stickerPickerOpen, setStickerPickerOpen] = useState(false)
 
   return (
     <div className="flex flex-wrap items-center gap-2 p-2 mb-3 rounded-xl border border-border bg-muted/50">
@@ -52,6 +56,33 @@ export function Toolbar({
           e.target.value = ""
         }}
       />
+
+      <Popover open={stickerPickerOpen} onOpenChange={setStickerPickerOpen}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="ghost" size="sm">
+            <Sticker className="size-4 mr-1.5" /> สติกเกอร์
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80" align="start">
+          <div className="grid grid-cols-4 gap-2">
+            {STICKERS.map((sticker) => (
+              <button
+                key={sticker.id}
+                type="button"
+                title={sticker.label}
+                onClick={() => {
+                  onAddSticker(sticker)
+                  setStickerPickerOpen(false)
+                }}
+                className="flex items-center justify-center rounded-lg border border-transparent p-1 hover:border-border hover:bg-accent transition-colors"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sticker.src} alt={sticker.label} className="size-14 object-contain" />
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       <Button type="button" variant="ghost" size="sm" onClick={onAddSpace} title="เพิ่มพื้นที่ทำงานด้านล่าง">
         <ArrowDownToLine className="size-4 mr-1.5" /> เพิ่มพื้นที่
