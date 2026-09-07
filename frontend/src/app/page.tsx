@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useInView } from "react-intersection-observer"
 import { DiaryHeader } from "@/components/diary-header"
+import { NewEntryComposer } from "@/components/new-entry-composer"
 import { DiaryGrid } from "@/components/diary-grid"
 import { DiaryForm } from "@/components/diary-form"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -124,11 +125,7 @@ export default function DiaryDashboard() {
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-1000">
-      <DiaryHeader 
-        onNewEntry={() => {
-          setSelectedEntry(null);
-          setIsModalOpen(true);
-        }} 
+      <DiaryHeader
         onLogout={handleLogout}
         userName={user?.full_name}
       />
@@ -138,8 +135,16 @@ export default function DiaryDashboard() {
           <h2 className="text-4xl font-extrabold tracking-tight text-foreground">Memory Lane</h2>
           <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
         </div>
-        
-        <DiaryGrid 
+
+        <NewEntryComposer
+          onNewEntry={() => {
+            setSelectedEntry(null);
+            setIsModalOpen(true);
+          }}
+          userName={user?.full_name}
+        />
+
+        <DiaryGrid
           entries={entries} 
           onEdit={handleEdit} 
           onDelete={(id) => setDeleteId(id)} 

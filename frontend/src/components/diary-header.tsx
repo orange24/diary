@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Plus, BookOpen, LogOut, User } from "lucide-react"
+import { BookOpen, LogOut, User } from "lucide-react"
 import { ThemeSwitcher } from "./theme-switcher"
 import {
   DropdownMenu,
@@ -14,12 +14,11 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface DiaryHeaderProps {
-  onNewEntry?: () => void
   onLogout?: () => void
   userName?: string
 }
 
-export function DiaryHeader({ onNewEntry, onLogout, userName }: DiaryHeaderProps) {
+export function DiaryHeader({ onLogout, userName }: DiaryHeaderProps) {
   // สร้างชื่อย่อสำหรับ Avatar (เช่น Watchara Kittikum -> WK)
   const getInitials = (name?: string) => {
     if (!name) return <User className="size-4" />;
@@ -48,14 +47,6 @@ export function DiaryHeader({ onNewEntry, onLogout, userName }: DiaryHeaderProps
         {/* Right Side: Actions & User Profile */}
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
-
-          <Button 
-            onClick={onNewEntry} 
-            className="rounded-full px-4 shadow-md hover:shadow-lg transition-all active:scale-95"
-          >
-            <Plus className="size-4 sm:mr-2" />
-            <span className="hidden sm:inline">New Entry</span>
-          </Button>
 
           <div className="h-6 w-[1px] bg-border mx-1" />
 
