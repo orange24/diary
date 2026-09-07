@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useInView } from "react-intersection-observer"
 import { DiaryHeader } from "@/components/diary-header"
 import { NewEntryComposer } from "@/components/new-entry-composer"
+import { DiaryTimelineSidebar } from "@/components/diary-timeline-sidebar"
 import { DiaryGrid } from "@/components/diary-grid"
 import { DiaryForm } from "@/components/diary-form"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -130,42 +131,53 @@ export default function DiaryDashboard() {
         userName={user?.full_name}
       />
 
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
-        <div className="mb-10 space-y-1">
-          <h2 className="text-4xl font-extrabold tracking-tight text-foreground">Memory Lane</h2>
-          <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
-        </div>
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)_200px] gap-8">
+          {/* Left: year/month timeline */}
+          <DiaryTimelineSidebar entries={entries} />
 
-        <NewEntryComposer
-          onNewEntry={() => {
-            setSelectedEntry(null);
-            setIsModalOpen(true);
-          }}
-          userName={user?.full_name}
-        />
+          {/* Center: the feed */}
+          <div className="min-w-0">
+            <div className="mb-10 space-y-1">
+              <h2 className="text-4xl font-extrabold tracking-tight text-foreground">Memory Lane</h2>
+              <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
+            </div>
 
-        <DiaryGrid
-          entries={entries} 
-          onEdit={handleEdit} 
-          onDelete={(id) => setDeleteId(id)} 
-        />
-        
-        <div ref={ref} className="py-16 text-center flex flex-col items-center justify-center">
-          {loading && (
-            <div className="flex gap-2">
-              <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce"></div>
-              <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-              <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            <NewEntryComposer
+              onNewEntry={() => {
+                setSelectedEntry(null);
+                setIsModalOpen(true);
+              }}
+              userName={user?.full_name}
+            />
+
+            <DiaryGrid
+              entries={entries}
+              onEdit={handleEdit}
+              onDelete={(id) => setDeleteId(id)}
+            />
+
+            <div ref={ref} className="py-16 text-center flex flex-col items-center justify-center">
+              {loading && (
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce"></div>
+                  <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                  <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                </div>
+              )}
+              {!hasMore && entries.length > 0 && (
+                <div className="w-full flex flex-col items-center gap-4">
+                  <div className="h-px w-24 bg-border" />
+                  <p className="text-muted-foreground text-sm font-medium italic">
+                    You've reached the end of your memories.
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-          {!hasMore && entries.length > 0 && (
-            <div className="w-full flex flex-col items-center gap-4">
-              <div className="h-px w-24 bg-border" />
-              <p className="text-muted-foreground text-sm font-medium italic">
-                You've reached the end of your memories.
-              </p>
-            </div>
-          )}
+          </div>
+
+          {/* Right: reserved for future content */}
+          <aside className="hidden lg:block" />
         </div>
       </main>
 
