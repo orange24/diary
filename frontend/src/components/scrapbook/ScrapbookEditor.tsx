@@ -153,7 +153,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
       )}
 
       <div
-        className="relative bg-white mx-auto overflow-hidden rounded-md border border-border"
+        className="relative bg-white mx-auto overflow-hidden rounded-md border border-border shadow-[0_12px_32px_-6px_var(--canvas-frame-shadow)]"
         style={{
           width: PAGE_WIDTH * scale,
           height: canvasHeight * scale,
