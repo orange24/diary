@@ -78,12 +78,20 @@ export default function LoginPage() {
         .animate-shake {
           animation: shake 0.2s ease-in-out 0s 2;
         }
+        /* Chrome paints its own gray/yellow tint over autofilled fields,
+           overriding bg-white — force it back to white on this fixed-light page. */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0px 1000px white inset;
+          -webkit-text-fill-color: #171717;
+        }
       `}</style>
 
       <Card className="w-full max-w-md shadow-2xl border-neutral-200 rounded-3xl overflow-hidden bg-white">
         <CardHeader className="pt-8">
           <CardTitle className="text-3xl font-bold text-center text-neutral-900 tracking-tight">
-            Diary Login
+            Papymory Login
           </CardTitle>
           <p className="text-center text-neutral-500 text-sm mt-2">เข้าสู่ระบบเพื่อบันทึกเรื่องราวของคุณ</p>
         </CardHeader>
@@ -100,7 +108,7 @@ export default function LoginPage() {
                       <Input
                         placeholder="Username"
                         {...field}
-                        className={`rounded-xl py-6 px-4 bg-white text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("username")}`}
+                        className={`rounded-xl py-6 px-4 bg-white! text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("username")}`}
                       />
                     </FormControl>
                     <FormMessage className="text-[12px] font-bold text-red-500 ml-1 mt-1 italic" />
@@ -118,7 +126,7 @@ export default function LoginPage() {
                         type="password"
                         placeholder="Password"
                         {...field}
-                        className={`rounded-xl py-6 px-4 bg-white text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("password")}`}
+                        className={`rounded-xl py-6 px-4 bg-white! text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("password")}`}
                       />
                     </FormControl>
                     <FormMessage className="text-[12px] font-bold text-red-500 ml-1 mt-1 italic" />

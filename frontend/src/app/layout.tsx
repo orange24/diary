@@ -13,7 +13,7 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: 'My Daily Diary',
+  title: 'Papymory',
   description: 'A personal diary dashboard to capture your daily thoughts and memories',
   // ... metadata อื่นๆ ของคุณคงเดิม ...
 }
@@ -29,9 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
 
           <AuthProvider>
-            <ThemeProvider 
-              attribute="data-theme" 
-              defaultTheme="week-1" 
+            <ThemeProvider
+              attribute="data-theme"
+              defaultTheme="light"
               enableSystem={false}
             >
               {children}

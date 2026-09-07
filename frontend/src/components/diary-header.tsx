@@ -37,11 +37,11 @@ export function DiaryHeader({ onNewEntry, onLogout, userName }: DiaryHeaderProps
         
         {/* Left Side: Logo & Title */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-primary shadow-lg shadow-primary/20">
-            <BookOpen className="size-5 text-primary-foreground" />
+          <div className="flex items-center justify-center size-10 rounded-xl bg-logo shadow-lg shadow-logo/20">
+            <BookOpen className="size-5 text-logo-foreground" />
           </div>
           <h1 className="text-xl font-bold tracking-tight hidden md:block">
-            My Daily Diary
+            Papymory
           </h1>
         </div>
 
