@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, PlayCircle } from "lucide-react"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, PlayCircle, Images } from "lucide-react"
 import { Entry } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
@@ -93,8 +93,24 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      {entries.map((entry) => (
-        <Card key={entry.id} className="group flex flex-col bg-card overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300">
+      {entries.map((entry) => {
+        const isScrapbook = !!(entry.layout?.elements && entry.layout.elements.length > 0)
+        const hasImages = entry.images && entry.images.length > 0
+
+        return (
+        <Card key={entry.id} className="group relative flex flex-col bg-card overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300">
+          {isScrapbook && hasImages && (
+            <button
+              type="button"
+              onClick={() => openLightbox(entry.images, 0)}
+              title={`ดูรูปภาพทั้งหมด (${entry.images.length})`}
+              className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-background/80 backdrop-blur-sm px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent transition-colors"
+            >
+              <Images className="size-3.5" />
+              {entry.images.length}
+            </button>
+          )}
+
           <CardHeader className="pb-2">
             <CardTitle className="text-xl font-bold text-card-foreground">{entry.title}</CardTitle>
             <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
@@ -104,10 +120,10 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {entry.layout?.elements && entry.layout.elements.length > 0 ? (
+            {isScrapbook ? (
               <div className="overflow-hidden rounded-lg border border-border" style={{ maxHeight: 320 }}>
                 <ScrapbookEditor
-                  elements={entry.layout.elements}
+                  elements={entry.layout!.elements}
                   onChange={() => {}}
                   editable={false}
                   scale={320 / PAGE_WIDTH}
@@ -120,7 +136,7 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
               />
             )}
 
-            {entry.images && entry.images.length > 0 && (
+            {!isScrapbook && hasImages && (
               <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
                 {entry.images.map((path, index) => (
                   <div
@@ -161,8 +177,9 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
             </Button>
           </CardFooter>
         </Card>
-      ))}
-      
+        )
+      })}
+
       {/* --- Lightbox UI --- */}
       {isOpen && (
         <div 
