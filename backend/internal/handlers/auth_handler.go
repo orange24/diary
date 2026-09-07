@@ -21,13 +21,20 @@ func (h *EntryHandler) Register(c *gin.Context) {
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 
+	// birthdate is a DATE column — an empty string fails Postgres's date parser,
+	// so an omitted birthdate must go in as NULL instead of "".
+	var birthdate interface{}
+	if user.Birthdate != "" {
+		birthdate = user.Birthdate
+	}
+
 	query := `INSERT INTO users (
-		username, password, full_name, birthdate, gender, country, 
+		username, password, full_name, birthdate, gender, country,
 		facebook_link, gmail_link, apple_id_link, x_link
 	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 	_, err := h.DB.Exec(query,
-		user.Username, string(hashedPassword), user.FullName, user.Birthdate,
+		user.Username, string(hashedPassword), user.FullName, birthdate,
 		user.Gender, user.Country, user.FacebookLink, user.GmailLink,
 		user.AppleIDLink, user.XLink,
 	)
@@ -45,10 +52,9 @@ func (h *EntryHandler) Login(c *gin.Context) {
 	var input models.User
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("Error binding JSON: %v", err) // ดูว่า JSON ส่งมาผิด format ไหม
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	log.Printf("Login attempt for username: %s, password: %s", input.Username, input.Password)
 
 	var dbUser models.User
 	// 1. เพิ่ม username และ full_name เข้าไปใน Query
@@ -60,14 +66,16 @@ func (h *EntryHandler) Login(c *gin.Context) {
 		&dbUser.Password,
 	)
 
-	log.Printf("Login err: %s ", err)
-
 	if err != nil {
 		c.JSON(401, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
-	// ... code check bcrypt ...
+	// เช็ค bcrypt ว่ารหัสผ่านที่ส่งมาตรงกับ hash ในฐานข้อมูลไหม
+	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(input.Password)); err != nil {
+		c.JSON(401, gin.H{"error": "Invalid username or password"})
+		return
+	}
 
 	token, err := utils.GenerateToken(dbUser.ID)
 	if err != nil {
