@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"diary_app/backend/internal/models"
+	"encoding/json"
 	"log"
 	"os"
 	"strconv"
@@ -27,9 +28,9 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	userID := c.MustGet("user_id")
 
 	// เพิ่มเงื่อนไข WHERE user_id = $3
-	query := `SELECT id, title, content, created_date, COALESCE(created_by, ''), images 
-			  FROM entries 
-			  WHERE user_id = $3 
+	query := `SELECT id, title, content, created_date, COALESCE(created_by, ''), images, layout
+			  FROM entries
+			  WHERE user_id = $3
 			  ORDER BY id DESC LIMIT $1 OFFSET $2`
 
 	rows, err := h.DB.Query(query, limit, offset, userID)
@@ -42,10 +43,14 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	var entries []models.Entry = []models.Entry{} // ป้องกันการส่ง null กลับไปถ้าไม่มีข้อมูล
 	for rows.Next() {
 		var e models.Entry
-		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images)
+		var layoutStr sql.NullString
+		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Scan error: " + err.Error()})
 			return
+		}
+		if layoutStr.Valid {
+			e.Layout = json.RawMessage(layoutStr.String)
 		}
 		entries = append(entries, e)
 	}
@@ -62,11 +67,16 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 
 	userID := c.MustGet("user_id")
 
-	// เพิ่ม user_id ลงใน INSERT query
-	query := `INSERT INTO entries (title, content, created_by, images, user_id) 
-              VALUES ($1, $2, $3, $4, $5) RETURNING id, created_date`
+	var layoutParam interface{}
+	if len(input.Layout) > 0 {
+		layoutParam = string(input.Layout)
+	}
 
-	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID).
+	// เพิ่ม user_id และ layout ลงใน INSERT query
+	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout)
+              VALUES ($1, $2, $3, $4, $5, $6::jsonb) RETURNING id, created_date`
+
+	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam).
 		Scan(&input.ID, &input.CreatedDate)
 
 	if err != nil {
@@ -107,9 +117,14 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 		return
 	}
 
-	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4 
-			  WHERE id = $5 AND user_id = $6`
-	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), id, userID)
+	var layoutParam interface{}
+	if len(input.Layout) > 0 {
+		layoutParam = string(input.Layout)
+	}
+
+	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb
+			  WHERE id = $6 AND user_id = $7`
+	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, id, userID)
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to update entry"})
@@ -131,10 +146,14 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 	userID := c.MustGet("user_id")
 	var e models.Entry
 
-	query := `SELECT id, title, content, created_date, created_by, images 
+	query := `SELECT id, title, content, created_date, created_by, images, layout
 			  FROM entries WHERE id = $1 AND user_id = $2`
+	var layoutStr sql.NullString
 	err := h.DB.QueryRow(query, id, userID).
-		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images)
+		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr)
+	if err == nil && layoutStr.Valid {
+		e.Layout = json.RawMessage(layoutStr.String)
+	}
 
 	if err != nil {
 		if err == sql.ErrNoRows {
