@@ -24,6 +24,7 @@ interface ScrapbookEditorProps {
 
 export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1 }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const canvasHeight = useMemo(
     () => Math.max(PAGE_HEIGHT_MIN, ...elements.map((e) => e.y + e.height + 80)),
@@ -54,6 +55,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
     }
     onChange([...elements, newElement])
     setSelectedId(newElement.id)
+    setEditingId(newElement.id)
   }
 
   const handleAddImageFile = async (file: File) => {
@@ -90,6 +92,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
     if (!selectedId) return
     onChange(elements.filter((e) => e.id !== selectedId))
     setSelectedId(null)
+    setEditingId(null)
   }
 
   const handleBringToFront = () => {
@@ -125,7 +128,10 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
           height: canvasHeight * scale,
         }}
         onClick={(e) => {
-          if (editable && e.target === e.currentTarget) setSelectedId(null)
+          if (editable && e.target === e.currentTarget) {
+            setSelectedId(null)
+            setEditingId(null)
+          }
         }}
       >
         <div
@@ -140,8 +146,14 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
           {elements.map((el) => (
             <div
               key={el.id}
-              id={`scrapbook-el-${el.id}`}
+              // Only give the element a DOM id in editable mode: a read-only card
+              // preview can render the same element ids as an open editor for the
+              // same entry, and react-moveable resolves string targets with
+              // document.querySelector, which would silently bind to whichever
+              // one appears first in the DOM instead of the intended editor node.
+              id={editable ? `scrapbook-el-${el.id}` : undefined}
               onMouseDown={() => editable && setSelectedId(el.id)}
+              onDoubleClick={() => editable && el.type === "text" && setEditingId(el.id)}
               style={{
                 position: "absolute",
                 left: el.x,
@@ -151,13 +163,19 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
                 transform: `rotate(${el.rotation}deg)`,
                 zIndex: el.zIndex,
                 cursor: editable ? "move" : "default",
+                // Not yet selected (Moveable isn't attached until the first click's
+                // state update re-renders), so a click-and-drag in one motion would
+                // otherwise fall through to the browser's native text-selection drag.
+                userSelect: editable && editingId !== el.id ? "none" : "auto",
               }}
             >
               {el.type === "text" ? (
                 <TextElement
                   element={el}
                   editable={editable}
+                  isEditing={editingId === el.id}
                   onChangeText={(text) => updateElement(el.id, { text })}
+                  onFinishEditing={() => setEditingId(null)}
                 />
               ) : (
                 <ImageElement element={el} />
@@ -165,9 +183,9 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
             </div>
           ))}
 
-          {editable && selectedId && (
+          {editable && selectedId && selectedId !== editingId && (
             <Moveable
-              target={`#scrapbook-el-${selectedId}`}
+              target={`#scrapbook-el-${CSS.escape(selectedId)}`}
               draggable
               resizable
               rotatable

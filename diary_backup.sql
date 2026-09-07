@@ -10,7 +10,8 @@ CREATE TABLE public.entries (
     content text,
     created_date timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     created_by character varying(255),
-    images text[]
+    images text[],
+    layout jsonb
 );
 
 

@@ -104,7 +104,7 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {entry.layout && entry.layout.elements.length > 0 ? (
+            {entry.layout?.elements && entry.layout.elements.length > 0 ? (
               <div className="overflow-hidden rounded-lg border border-border" style={{ maxHeight: 320 }}>
                 <ScrapbookEditor
                   elements={entry.layout.elements}
