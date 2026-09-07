@@ -120,7 +120,7 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
 
           <CardContent className="space-y-4">
             {isScrapbook ? (
-              <ScrapbookPreview elements={entry.layout!.elements} maxHeight={320} />
+              <ScrapbookPreview elements={entry.layout!.elements} />
             ) : (
               <div
                 className="prose dark:prose-invert max-w-none text-muted-foreground"
