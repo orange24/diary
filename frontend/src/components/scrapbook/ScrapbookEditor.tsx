@@ -8,6 +8,7 @@ import {
   ImageScrapElement,
   PAGE_WIDTH,
   PAGE_HEIGHT_MIN,
+  PAGE_HEIGHT_STEP,
   NEW_TEXT_PLACEHOLDER,
   newElementId,
 } from "@/types/scrapbook"
@@ -26,11 +27,14 @@ interface ScrapbookEditorProps {
 export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1 }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [extraHeight, setExtraHeight] = useState(0)
 
   const canvasHeight = useMemo(
-    () => Math.max(PAGE_HEIGHT_MIN, ...elements.map((e) => e.y + e.height + 80)),
-    [elements]
+    () => Math.max(PAGE_HEIGHT_MIN, PAGE_HEIGHT_MIN + extraHeight, ...elements.map((e) => e.y + e.height + 80)),
+    [elements, extraHeight]
   )
+
+  const handleAddSpace = () => setExtraHeight((h) => h + PAGE_HEIGHT_STEP)
 
   const selectedElement = elements.find((e) => e.id === selectedId) ?? null
 
@@ -119,6 +123,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
           onDeleteSelected={handleDeleteSelected}
           onBringToFront={handleBringToFront}
           onSendToBack={handleSendToBack}
+          onAddSpace={handleAddSpace}
         />
       )}
 

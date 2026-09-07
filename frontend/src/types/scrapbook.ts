@@ -33,7 +33,12 @@ export interface ScrapbookLayout {
 }
 
 export const PAGE_WIDTH = 794
-export const PAGE_HEIGHT_MIN = 1123
+// Floor for the canvas height — kept compact so a brand-new entry fits on
+// screen without scrolling. The canvas still auto-grows to fit content that
+// extends past this, and the user can add more room explicitly (see
+// PAGE_HEIGHT_STEP) without needing to add content first.
+export const PAGE_HEIGHT_MIN = 500
+export const PAGE_HEIGHT_STEP = 300
 export const FONT_OPTIONS = ["Prompt", "Georgia", "Courier New"] as const
 export const NEW_TEXT_PLACEHOLDER = "พิมพ์ข้อความที่นี่..."
 
