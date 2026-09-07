@@ -40,7 +40,7 @@ export function DiaryHeader({ onNewEntry, onLogout, userName }: DiaryHeaderProps
           <div className="flex items-center justify-center size-10 rounded-xl bg-logo shadow-lg shadow-logo/20">
             <BookOpen className="size-5 text-logo-foreground" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight hidden md:block">
+          <h1 className="text-xl font-bold tracking-tight uppercase text-logo hidden md:block">
             Papymory
           </h1>
         </div>
