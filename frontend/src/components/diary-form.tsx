@@ -78,7 +78,11 @@ export function DiaryForm({ onSuccess, initialData, token, userId }: DiaryFormPr
         <ScrapbookEditor elements={elements} onChange={setElements} editable token={token} />
       </div>
 
-      <Button type="submit" className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20" disabled={loading}>
+      <Button
+        type="submit"
+        className="w-full h-12 text-lg font-bold bg-logo text-logo-foreground shadow-lg shadow-logo/20 hover:bg-logo/90"
+        disabled={loading}
+      >
         {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> กำลังบันทึก...</> : (initialData ? "อัปเดตไดอารี่" : "บันทึกเรื่องราววันนี้")}
       </Button>
     </form>
