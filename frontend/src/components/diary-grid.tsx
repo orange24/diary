@@ -26,6 +26,17 @@ const getCleanHtml = (html: string) => {
   });
 };
 
+const formatMonthYear = (dateStr?: string) => {
+  if (!dateStr) return ""
+  return new Date(dateStr).toLocaleDateString("th-TH", { month: "short", year: "numeric" })
+}
+
+const monthKey = (dateStr?: string) => {
+  if (!dateStr) return ""
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}-${d.getMonth()}`
+}
+
 const isVideo = (path: string) => {
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
   return videoExtensions.some(ext => path.toLowerCase().endsWith(ext));
@@ -91,13 +102,33 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
   }, [isOpen, nextImage, prevImage, closeLightbox])
 
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {entries.map((entry) => {
-        const isScrapbook = !!(entry.layout?.elements && entry.layout.elements.length > 0)
-        const hasImages = entry.images && entry.images.length > 0
+    <div className="relative pl-0 sm:pl-24">
+      {/* Timeline rail: a continuous line in the left gutter, with a dot per
+          entry and a month/year label wherever the month changes. Positioned
+          relative to each entry's own wrapper (which sits at the sm:pl-24
+          offset) rather than the outer container, so it stays correct
+          regardless of how tall any given card renders. */}
+      {entries.length > 0 && (
+        <div className="hidden sm:block absolute left-[76px] top-2 bottom-2 w-px bg-border" aria-hidden />
+      )}
 
-        return (
-        <Card key={entry.id} className="group relative flex flex-col bg-card overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="grid grid-cols-1 gap-6">
+        {entries.map((entry, index) => {
+          const isScrapbook = !!(entry.layout?.elements && entry.layout.elements.length > 0)
+          const hasImages = entry.images && entry.images.length > 0
+          const showMonthLabel =
+            index === 0 || monthKey(entry.created_date) !== monthKey(entries[index - 1].created_date)
+
+          return (
+          <div key={entry.id} className="relative">
+            {showMonthLabel && (
+              <div className="hidden sm:block absolute -left-24 top-1 w-[60px] text-right">
+                <span className="text-xs font-bold text-foreground">{formatMonthYear(entry.created_date)}</span>
+              </div>
+            )}
+            <span className="hidden sm:block absolute -left-[20px] top-2 size-3 -translate-x-1/2 rounded-full bg-logo ring-4 ring-background z-10" aria-hidden />
+
+            <Card className="group relative flex flex-col bg-card overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300">
           {isScrapbook && hasImages && (
             <button
               type="button"
@@ -168,9 +199,11 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
               <Trash2 className="h-4 w-4 mr-1.5" /> ลบ
             </Button>
           </CardFooter>
-        </Card>
-        )
-      })}
+            </Card>
+          </div>
+          )
+        })}
+      </div>
 
       {/* --- Lightbox UI --- */}
       {isOpen && (
