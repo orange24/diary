@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import Moveable from "react-moveable"
 import {
   ScrapElement,
@@ -24,7 +24,6 @@ interface ScrapbookEditorProps {
 
 export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1 }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const elementRefs = useRef(new Map<string, HTMLDivElement>())
 
   const canvasHeight = useMemo(
     () => Math.max(PAGE_HEIGHT_MIN, ...elements.map((e) => e.y + e.height + 80)),
@@ -141,10 +140,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
           {elements.map((el) => (
             <div
               key={el.id}
-              ref={(node) => {
-                if (node) elementRefs.current.set(el.id, node)
-                else elementRefs.current.delete(el.id)
-              }}
+              id={`scrapbook-el-${el.id}`}
               onMouseDown={() => editable && setSelectedId(el.id)}
               style={{
                 position: "absolute",
@@ -169,9 +165,9 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale = 1
             </div>
           ))}
 
-          {editable && selectedId && elementRefs.current.get(selectedId) && (
+          {editable && selectedId && (
             <Moveable
-              target={elementRefs.current.get(selectedId)!}
+              target={`#scrapbook-el-${selectedId}`}
               draggable
               resizable
               rotatable
