@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef } from "react"
-import { Type, ImagePlus, Trash2, BringToFront, SendToBack, ArrowDownToLine } from "lucide-react"
+import { Type, ImagePlus, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrapElement, FONT_OPTIONS } from "@/types/scrapbook"
 
@@ -14,6 +14,8 @@ interface ToolbarProps {
   onBringToFront: () => void
   onSendToBack: () => void
   onAddSpace: () => void
+  onRemoveSpace: () => void
+  canRemoveSpace: boolean
 }
 
 export function Toolbar({
@@ -25,6 +27,8 @@ export function Toolbar({
   onBringToFront,
   onSendToBack,
   onAddSpace,
+  onRemoveSpace,
+  canRemoveSpace,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -51,6 +55,16 @@ export function Toolbar({
 
       <Button type="button" variant="ghost" size="sm" onClick={onAddSpace} title="เพิ่มพื้นที่ทำงานด้านล่าง">
         <ArrowDownToLine className="size-4 mr-1.5" /> เพิ่มพื้นที่
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onRemoveSpace}
+        disabled={!canRemoveSpace}
+        title="ลดพื้นที่ทำงานด้านล่าง"
+      >
+        <ArrowUpToLine className="size-4 mr-1.5" /> ลดพื้นที่
       </Button>
 
       {selectedElement && (

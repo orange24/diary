@@ -57,6 +57,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
   )
 
   const handleAddSpace = () => setExtraHeight((h) => h + PAGE_HEIGHT_STEP)
+  const handleRemoveSpace = () => setExtraHeight((h) => Math.max(0, h - PAGE_HEIGHT_STEP))
 
   const selectedElement = elements.find((e) => e.id === selectedId) ?? null
 
@@ -146,6 +147,8 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
           onBringToFront={handleBringToFront}
           onSendToBack={handleSendToBack}
           onAddSpace={handleAddSpace}
+          onRemoveSpace={handleRemoveSpace}
+          canRemoveSpace={extraHeight > 0}
         />
       )}
 
