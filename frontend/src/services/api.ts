@@ -1,5 +1,7 @@
 // frontend/src/services/api.ts
 
+import { ScrapbookLayout } from "@/types/scrapbook";
+
 // ✅ แก้ไขพอร์ตให้ตรงกับ Docker (9090)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090";
 
@@ -10,6 +12,7 @@ export interface Entry {
   created_date: string;
   created_by: string;
   images: string[];
+  layout?: ScrapbookLayout | null;
 }
 
 // 1. ดึงรายการบันทึก (แบบปลอดภัย)
