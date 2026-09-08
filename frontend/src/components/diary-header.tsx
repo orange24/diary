@@ -49,33 +49,36 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
           </h1>
         </div>
 
-        {/* Center: Home / Hashtag nav */}
-        <nav className="flex items-center gap-1 rounded-full bg-muted p-1">
+        {/* Center: Home / Hashtag nav — plain spaced-out icons, Facebook-style,
+            with a underline bar marking the active tab */}
+        <nav className="flex h-full items-center gap-8 sm:gap-14">
           <button
             type="button"
+            title="Home"
             onClick={() => onViewChange("home")}
             className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
-              activeView === "home"
-                ? "bg-card text-logo shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              "relative flex h-full items-center px-2 transition-colors",
+              activeView === "home" ? "text-logo" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Home className="size-4" />
-            <span className="hidden sm:inline">Home</span>
+            <Home className="size-6" />
+            {activeView === "home" && (
+              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-logo" />
+            )}
           </button>
           <button
             type="button"
+            title="Hashtag"
             onClick={() => onViewChange("hashtags")}
             className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
-              activeView === "hashtags"
-                ? "bg-card text-logo shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              "relative flex h-full items-center px-2 transition-colors",
+              activeView === "hashtags" ? "text-logo" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Hash className="size-4" />
-            <span className="hidden sm:inline">Hashtag</span>
+            <Hash className="size-6" />
+            {activeView === "hashtags" && (
+              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-logo" />
+            )}
           </button>
         </nav>
 

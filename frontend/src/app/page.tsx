@@ -28,6 +28,7 @@ export default function DiaryDashboard() {
   const router = useRouter()
   
   const [activeView, setActiveView] = useState<DiaryView>("home")
+  const [selectedHashtag, setSelectedHashtag] = useState<string | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
   const [entries, setEntries] = useState<Entry[]>([])
   const [page, setPage] = useState(1)
@@ -94,6 +95,18 @@ export default function DiaryDashboard() {
     }
   }, [activeView, hasMore, token, loading, loadMoreEntries])
 
+  // Switching tabs via the nav always starts from the tag cloud; clicking a
+  // #tag inside a card (openHashtag) jumps straight past it instead.
+  const handleViewChange = (view: DiaryView) => {
+    setActiveView(view)
+    setSelectedHashtag(null)
+  }
+
+  const openHashtag = (tag: string) => {
+    setSelectedHashtag(tag)
+    setActiveView("hashtags")
+  }
+
   const handleSuccess = () => {
     setIsModalOpen(false)
     setSelectedEntry(null)
@@ -141,7 +154,7 @@ export default function DiaryDashboard() {
         onLogout={handleLogout}
         userName={user?.full_name}
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
       />
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
@@ -155,6 +168,8 @@ export default function DiaryDashboard() {
               <HashtagExplorer
                 entries={entries}
                 isLoadingAll={hasMore || loading}
+                selectedTag={selectedHashtag}
+                onSelectTag={setSelectedHashtag}
                 onEdit={handleEdit}
                 onDelete={(id) => setDeleteId(id)}
               />
@@ -176,6 +191,7 @@ export default function DiaryDashboard() {
                   entries={entries}
                   onEdit={handleEdit}
                   onDelete={(id) => setDeleteId(id)}
+                  onHashtagClick={openHashtag}
                 />
 
                 <div ref={ref} className="py-16 text-center flex flex-col items-center justify-center">

@@ -24,6 +24,7 @@ interface ScrapbookEditorProps {
   token?: string
   scale?: number
   onGalleryImageAdded?: (url: string) => void
+  onHashtagClick?: (tag: string) => void
 }
 
 export function ScrapbookEditor({
@@ -33,6 +34,7 @@ export function ScrapbookEditor({
   token,
   scale: scaleProp,
   onGalleryImageAdded,
+  onHashtagClick,
 }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -261,6 +263,7 @@ export function ScrapbookEditor({
                   isEditing={editingId === el.id}
                   onChangeText={(text) => updateElement(el.id, { text, isPlaceholder: false })}
                   onFinishEditing={() => setEditingId(null)}
+                  onHashtagClick={onHashtagClick}
                 />
               ) : (
                 <ImageElement element={el} />

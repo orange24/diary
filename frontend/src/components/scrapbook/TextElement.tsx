@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react"
 import DOMPurify from "isomorphic-dompurify"
 import { TextScrapElement } from "@/types/scrapbook"
+import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
 
 const ALLOWED_TAGS = ["b", "i", "em", "strong", "u", "br"]
 const ALLOWED_ATTR: string[] = []
@@ -17,9 +18,19 @@ interface TextElementProps {
   isEditing: boolean
   onChangeText: (text: string) => void
   onFinishEditing: () => void
+  // Only wired up for read-only previews (editable=false) — inside an
+  // open editor a hashtag is just text being typed, not a link to follow.
+  onHashtagClick?: (tag: string) => void
 }
 
-export function TextElement({ element, editable, isEditing, onChangeText, onFinishEditing }: TextElementProps) {
+export function TextElement({
+  element,
+  editable,
+  isEditing,
+  onChangeText,
+  onFinishEditing,
+  onHashtagClick,
+}: TextElementProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   // While editing, the div's content is intentionally uncontrolled (no
@@ -62,6 +73,11 @@ export function TextElement({ element, editable, isEditing, onChangeText, onFini
         commitText()
         onFinishEditing()
       }}
+      onClick={(e) => {
+        if (editable || !onHashtagClick) return
+        const tag = hashtagFromClick(e)
+        if (tag) onHashtagClick(tag)
+      }}
       className="w-full h-full overflow-hidden outline-none"
       style={{
         color: element.color,
@@ -69,7 +85,7 @@ export function TextElement({ element, editable, isEditing, onChangeText, onFini
         fontSize: element.fontSize,
         cursor: isEditing ? "text" : "inherit",
       }}
-      {...(isEditing ? {} : { dangerouslySetInnerHTML: { __html: sanitize(element.text) } })}
+      {...(isEditing ? {} : { dangerouslySetInnerHTML: { __html: linkifyHashtags(sanitize(element.text)) } })}
     />
   )
 }

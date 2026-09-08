@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { ArrowLeft, Hash } from "lucide-react"
 import { Entry } from "@/services/api"
 import { extractHashtags } from "@/lib/hashtags"
@@ -9,6 +9,10 @@ import { DiaryGrid } from "@/components/diary-grid"
 interface HashtagExplorerProps {
   entries: Entry[]
   isLoadingAll: boolean
+  // Selection lives in the parent (not local state) so clicking a #tag
+  // inside a card anywhere else in the app can jump straight here.
+  selectedTag: string | null
+  onSelectTag: (tag: string | null) => void
   onEdit?: (id: number) => void
   onDelete?: (id: number) => void
 }
@@ -17,9 +21,14 @@ interface HashtagExplorerProps {
 // the loaded entries, and — once one is picked — just the entries carrying
 // it, newest first. Tags are derived from entry text on the fly rather than
 // stored, so there's no backend change needed to support this.
-export function HashtagExplorer({ entries, isLoadingAll, onEdit, onDelete }: HashtagExplorerProps) {
-  const [selectedTag, setSelectedTag] = useState<string | null>(null)
-
+export function HashtagExplorer({
+  entries,
+  isLoadingAll,
+  selectedTag,
+  onSelectTag,
+  onEdit,
+  onDelete,
+}: HashtagExplorerProps) {
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>()
     for (const entry of entries) {
@@ -42,7 +51,7 @@ export function HashtagExplorer({ entries, isLoadingAll, onEdit, onDelete }: Has
       <div>
         <button
           type="button"
-          onClick={() => setSelectedTag(null)}
+          onClick={() => onSelectTag(null)}
           className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-logo"
         >
           <ArrowLeft className="size-4" /> แฮชแท็กทั้งหมด
@@ -57,7 +66,12 @@ export function HashtagExplorer({ entries, isLoadingAll, onEdit, onDelete }: Has
         {taggedEntries.length === 0 ? (
           <p className="text-sm text-muted-foreground">ไม่พบบันทึกที่ติดแฮชแท็กนี้</p>
         ) : (
-          <DiaryGrid entries={taggedEntries} onEdit={onEdit} onDelete={onDelete} />
+          <DiaryGrid
+            entries={taggedEntries}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onHashtagClick={onSelectTag}
+          />
         )}
       </div>
     )
@@ -82,7 +96,7 @@ export function HashtagExplorer({ entries, isLoadingAll, onEdit, onDelete }: Has
             <button
               key={tag}
               type="button"
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => onSelectTag(tag)}
               className="flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-card-foreground shadow-sm transition-all hover:border-logo/40 hover:bg-logo/10 hover:text-logo"
             >
               <Hash className="size-3.5" />

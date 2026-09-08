@@ -16,11 +16,13 @@ import DOMPurify from "isomorphic-dompurify"
 import { ScrapbookPreview } from "@/components/scrapbook/ScrapbookPreview"
 import { GalleryMosaic } from "@/components/gallery-mosaic"
 import { isVideo, getDisplayMedia } from "@/lib/media-utils"
+import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
 
 interface DiaryGridProps {
   entries: Entry[]
-  onEdit?: (id: number) => void 
+  onEdit?: (id: number) => void
   onDelete?: (id: number) => void
+  onHashtagClick?: (tag: string) => void
 }
 
 // ✅ 2. สร้าง Helper Function สำหรับกรอง HTML (วางไว้นอก Component)
@@ -34,7 +36,7 @@ const getCleanHtml = (html: string) => {
   });
 };
 
-export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
+export function DiaryGrid({ entries, onEdit, onDelete, onHashtagClick }: DiaryGridProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentImages, setCurrentImages] = useState<string[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -123,11 +125,15 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
 
           <CardContent className="space-y-4">
             {isScrapbook ? (
-              <ScrapbookPreview elements={entry.layout!.elements} />
+              <ScrapbookPreview elements={entry.layout!.elements} onHashtagClick={onHashtagClick} />
             ) : (
               <div
                 className="prose dark:prose-invert max-w-none text-muted-foreground"
-                dangerouslySetInnerHTML={{ __html: getCleanHtml(entry.content) }}
+                onClick={(e) => {
+                  const tag = hashtagFromClick(e)
+                  if (tag) onHashtagClick?.(tag)
+                }}
+                dangerouslySetInnerHTML={{ __html: linkifyHashtags(getCleanHtml(entry.content)) }}
               />
             )}
 

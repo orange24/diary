@@ -7,12 +7,13 @@ import { ScrapbookEditor } from "./ScrapbookEditor"
 interface ScrapbookPreviewProps {
   elements: ScrapElement[]
   maxHeight?: number
+  onHashtagClick?: (tag: string) => void
 }
 
 // Read-only scrapbook preview that scales to fill whatever width its
 // container gives it, instead of a fixed pixel size — so the collage looks
 // right whether the card is narrow (phone) or wide (desktop).
-export function ScrapbookPreview({ elements, maxHeight }: ScrapbookPreviewProps) {
+export function ScrapbookPreview({ elements, maxHeight, onHashtagClick }: ScrapbookPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState<number | null>(null)
 
@@ -42,6 +43,7 @@ export function ScrapbookPreview({ elements, maxHeight }: ScrapbookPreviewProps)
           onChange={() => {}}
           editable={false}
           scale={width / PAGE_WIDTH}
+          onHashtagClick={onHashtagClick}
         />
       )}
     </div>
