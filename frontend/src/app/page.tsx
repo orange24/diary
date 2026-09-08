@@ -185,7 +185,11 @@ export default function DiaryDashboard() {
         if(!open) setSelectedEntry(null)
       }}>
         <DialogContent className="sm:max-w-[960px] max-h-[95vh] overflow-y-auto rounded-3xl border-primary/10 shadow-2xl p-0">
-          <div className="p-6">
+          {/* DialogContent is a CSS grid; without min-w-0 this grid item's
+              default min-width:auto lets the fixed-width scrapbook canvas
+              deep inside force the whole dialog to overflow horizontally
+              on narrow screens instead of the canvas scaling down to fit. */}
+          <div className="min-w-0 p-6">
             <DialogHeader className="mb-4">
               <DialogTitle className="text-2xl font-bold tracking-tight">
                 {selectedEntry ? "✨ แก้ไขบันทึกความทรงจำ" : "✍️ บันทึกเรื่องราวใหม่"}
