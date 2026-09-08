@@ -48,10 +48,11 @@ export function DiaryForm({ onSuccess, initialData, token, userId }: DiaryFormPr
     setLoading(true)
 
     try {
-      const images = [
-        ...elements.filter((el): el is ImageScrapElement => el.type === "image").map((el) => el.src),
-        ...galleryImages,
-      ]
+      // Only gallery uploads go in `images` — canvas photos/stickers are
+      // already visible on the page itself, so the full-view lightbox (which
+      // reads this field) should show just what was explicitly added to the
+      // gallery, not everything placed on the canvas.
+      const images = galleryImages
 
       const payload = {
         title,
