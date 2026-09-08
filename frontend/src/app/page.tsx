@@ -3,11 +3,12 @@
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useInView } from "react-intersection-observer"
-import { DiaryHeader } from "@/components/diary-header"
+import { DiaryHeader, DiaryView } from "@/components/diary-header"
 import { NewEntryComposer } from "@/components/new-entry-composer"
 import { DiaryTimelineSidebar } from "@/components/diary-timeline-sidebar"
 import { DiaryGrid } from "@/components/diary-grid"
 import { DiaryForm } from "@/components/diary-form"
+import { HashtagExplorer } from "@/components/hashtag-explorer"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getEntries, getEntry, deleteEntry, Entry } from "@/services/api"
 import { useAuth } from "@/context/auth-context"
@@ -26,6 +27,7 @@ export default function DiaryDashboard() {
   const { token, handleLogout, user, isLoading } = useAuth()
   const router = useRouter()
   
+  const [activeView, setActiveView] = useState<DiaryView>("home")
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
   const [entries, setEntries] = useState<Entry[]>([])
   const [page, setPage] = useState(1)
@@ -83,6 +85,15 @@ export default function DiaryDashboard() {
     }
   }, [inView, hasMore, token, loading, loadMoreEntries])
 
+  // The Hashtag tab has no scroll sentinel to trigger pagination, but it
+  // needs every entry loaded to build an accurate tag list — so keep
+  // fetching pages in the background for as long as that tab is open.
+  useEffect(() => {
+    if (activeView === "hashtags" && hasMore && token && !loading) {
+      loadMoreEntries()
+    }
+  }, [activeView, hasMore, token, loading, loadMoreEntries])
+
   const handleSuccess = () => {
     setIsModalOpen(false)
     setSelectedEntry(null)
@@ -129,6 +140,8 @@ export default function DiaryDashboard() {
       <DiaryHeader
         onLogout={handleLogout}
         userName={user?.full_name}
+        activeView={activeView}
+        onViewChange={setActiveView}
       />
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
@@ -136,43 +149,54 @@ export default function DiaryDashboard() {
           {/* Left: year/month timeline */}
           <DiaryTimelineSidebar entries={entries} />
 
-          {/* Center: the feed */}
+          {/* Center: the feed, or the hashtag browser */}
           <div className="min-w-0">
-            <div className="mb-10">
-              <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
-            </div>
-
-            <NewEntryComposer
-              onNewEntry={() => {
-                setSelectedEntry(null);
-                setIsModalOpen(true);
-              }}
-              userName={user?.full_name}
-            />
-
-            <DiaryGrid
-              entries={entries}
-              onEdit={handleEdit}
-              onDelete={(id) => setDeleteId(id)}
-            />
-
-            <div ref={ref} className="py-16 text-center flex flex-col items-center justify-center">
-              {loading && (
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce"></div>
-                  <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            {activeView === "hashtags" ? (
+              <HashtagExplorer
+                entries={entries}
+                isLoadingAll={hasMore || loading}
+                onEdit={handleEdit}
+                onDelete={(id) => setDeleteId(id)}
+              />
+            ) : (
+              <>
+                <div className="mb-10">
+                  <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
                 </div>
-              )}
-              {!hasMore && entries.length > 0 && (
-                <div className="w-full flex flex-col items-center gap-4">
-                  <div className="h-px w-24 bg-border" />
-                  <p className="text-muted-foreground text-sm font-medium italic">
-                    You've reached the end of your memories.
-                  </p>
+
+                <NewEntryComposer
+                  onNewEntry={() => {
+                    setSelectedEntry(null);
+                    setIsModalOpen(true);
+                  }}
+                  userName={user?.full_name}
+                />
+
+                <DiaryGrid
+                  entries={entries}
+                  onEdit={handleEdit}
+                  onDelete={(id) => setDeleteId(id)}
+                />
+
+                <div ref={ref} className="py-16 text-center flex flex-col items-center justify-center">
+                  {loading && (
+                    <div className="flex gap-2">
+                      <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce"></div>
+                      <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                      <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    </div>
+                  )}
+                  {!hasMore && entries.length > 0 && (
+                    <div className="w-full flex flex-col items-center gap-4">
+                      <div className="h-px w-24 bg-border" />
+                      <p className="text-muted-foreground text-sm font-medium italic">
+                        You've reached the end of your memories.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
           {/* Right: reserved for future content */}
