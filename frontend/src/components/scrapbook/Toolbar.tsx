@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Type, ImagePlus, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine, Sticker } from "lucide-react"
+import { Type, ImagePlus, Images, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine, Sticker } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrapElement, StickerOption, FONT_OPTIONS } from "@/types/scrapbook"
@@ -11,6 +11,7 @@ interface ToolbarProps {
   selectedElement: ScrapElement | null
   onAddText: () => void
   onAddImageFile: (file: File) => void
+  onAddGalleryImage: (file: File) => void
   onAddSticker: (sticker: StickerOption) => void
   onUpdateSelected: (patch: Partial<ScrapElement>) => void
   onDeleteSelected: () => void
@@ -25,6 +26,7 @@ export function Toolbar({
   selectedElement,
   onAddText,
   onAddImageFile,
+  onAddGalleryImage,
   onAddSticker,
   onUpdateSelected,
   onDeleteSelected,
@@ -35,6 +37,7 @@ export function Toolbar({
   canRemoveSpace,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const galleryFileInputRef = useRef<HTMLInputElement>(null)
   const [stickerPickerOpen, setStickerPickerOpen] = useState(false)
 
   return (
@@ -44,7 +47,7 @@ export function Toolbar({
       </Button>
 
       <Button type="button" variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
-        <ImagePlus className="size-4 mr-1.5" /> รูปภาพ
+        <ImagePlus className="size-4 mr-1.5" /> แทรกรูปภาพ
       </Button>
       <input
         ref={fileInputRef}
@@ -54,6 +57,27 @@ export function Toolbar({
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) onAddImageFile(file)
+          e.target.value = ""
+        }}
+      />
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => galleryFileInputRef.current?.click()}
+        title="เพิ่มรูปสำหรับดูเต็มๆ โดยไม่แทรกลงในหน้าบันทึก"
+      >
+        <Images className="size-4 mr-1.5" /> เพิ่มรูปแกลเลอรี
+      </Button>
+      <input
+        ref={galleryFileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) onAddGalleryImage(file)
           e.target.value = ""
         }}
       />

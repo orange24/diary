@@ -23,9 +23,17 @@ interface ScrapbookEditorProps {
   editable: boolean
   token?: string
   scale?: number
+  onGalleryImageAdded?: (url: string) => void
 }
 
-export function ScrapbookEditor({ elements, onChange, editable, token, scale: scaleProp }: ScrapbookEditorProps) {
+export function ScrapbookEditor({
+  elements,
+  onChange,
+  editable,
+  token,
+  scale: scaleProp,
+  onGalleryImageAdded,
+}: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [extraHeight, setExtraHeight] = useState(0)
@@ -87,8 +95,8 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
     setEditingId(newElement.id)
   }
 
-  const handleAddImageFile = async (file: File) => {
-    if (!token) return
+  const uploadFile = async (file: File): Promise<string | null> => {
+    if (!token) return null
     const formData = new FormData()
     formData.append("media", file)
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090"
@@ -97,9 +105,13 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     })
-    if (!res.ok) return
+    if (!res.ok) return null
     const data = await res.json()
-    const url: string | undefined = data.paths?.[0]
+    return data.paths?.[0] ?? null
+  }
+
+  const handleAddImageFile = async (file: File) => {
+    const url = await uploadFile(file)
     if (!url) return
     const offset = (elements.length % 5) * 20
     const newElement: ImageScrapElement = {
@@ -115,6 +127,13 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
     }
     onChange([...elements, newElement])
     setSelectedId(newElement.id)
+  }
+
+  // Unlike handleAddImageFile, this doesn't touch the canvas at all — the
+  // photo goes straight into the entry's full-size viewable gallery list.
+  const handleAddGalleryImage = async (file: File) => {
+    const url = await uploadFile(file)
+    if (url) onGalleryImageAdded?.(url)
   }
 
   const handleAddSticker = (sticker: StickerOption) => {
@@ -161,6 +180,7 @@ export function ScrapbookEditor({ elements, onChange, editable, token, scale: sc
           selectedElement={selectedElement}
           onAddText={handleAddText}
           onAddImageFile={handleAddImageFile}
+          onAddGalleryImage={handleAddGalleryImage}
           onAddSticker={handleAddSticker}
           onUpdateSelected={(patch) => selectedId && updateElement(selectedId, patch)}
           onDeleteSelected={handleDeleteSelected}
