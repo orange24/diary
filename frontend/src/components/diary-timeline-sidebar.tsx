@@ -35,7 +35,7 @@ export function DiaryTimelineSidebar({ entries }: DiaryTimelineSidebarProps) {
   }
 
   return (
-    <nav className="sticky top-24 hidden lg:block">
+    <nav className="sticky top-24 hidden max-h-[calc(100vh-7rem)] overflow-y-auto lg:block">
       <div className="relative pl-6">
         <div className="absolute left-[3px] top-1 bottom-1 w-px bg-border" aria-hidden />
         <ul className="space-y-4">
