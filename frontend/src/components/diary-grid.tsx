@@ -132,7 +132,7 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
               />
             )}
 
-            {!isScrapbook && hasImages && (
+            {hasImages && (
               <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
                 {entry.images.map((path, index) => (
                   <div
