@@ -11,6 +11,9 @@ export interface TextScrapElement {
   color: string
   fontFamily: string
   fontSize: number
+  // True until the first edit — lets the editor select-all on focus so the
+  // first keystroke wipes the seed text instead of appending to it.
+  isPlaceholder?: boolean
 }
 
 export interface ImageScrapElement {
@@ -33,11 +36,12 @@ export interface ScrapbookLayout {
 }
 
 export const PAGE_WIDTH = 794
-// Floor for the canvas height — kept compact so a brand-new entry fits on
-// screen without scrolling. The canvas still auto-grows to fit content that
-// extends past this, and the user can add more room explicitly (see
+// Floor for the canvas height — kept to about 4 lines' worth of space so a
+// brand-new entry opens compact, not with a wall of empty white below the
+// first text box. The canvas still auto-grows to fit content that extends
+// past this, and the user can add more room explicitly (see
 // PAGE_HEIGHT_STEP) without needing to add content first.
-export const PAGE_HEIGHT_MIN = 500
+export const PAGE_HEIGHT_MIN = 200
 export const PAGE_HEIGHT_STEP = 300
 export const FONT_OPTIONS = ["Prompt", "Georgia", "Courier New"] as const
 export const NEW_TEXT_PLACEHOLDER = "พิมพ์ข้อความที่นี่..."
@@ -99,4 +103,22 @@ export const STICKER_PACKS: StickerPack[] = [
 
 export function newElementId(): string {
   return `el_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+}
+
+export function createPlaceholderTextElement(text: string): TextScrapElement {
+  return {
+    id: newElementId(),
+    type: "text",
+    x: 40,
+    y: 40,
+    width: 220,
+    height: 100,
+    rotation: 0,
+    zIndex: 1,
+    text,
+    color: "#222222",
+    fontFamily: "Prompt",
+    fontSize: 18,
+    isPlaceholder: true,
+  }
 }

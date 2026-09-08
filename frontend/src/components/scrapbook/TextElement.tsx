@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react"
 import DOMPurify from "isomorphic-dompurify"
-import { TextScrapElement, NEW_TEXT_PLACEHOLDER } from "@/types/scrapbook"
+import { TextScrapElement } from "@/types/scrapbook"
 
 const ALLOWED_TAGS = ["b", "i", "em", "strong", "u", "br"]
 const ALLOWED_ATTR: string[] = []
@@ -37,7 +37,7 @@ export function TextElement({ element, editable, isEditing, onChangeText, onFini
     // Only select-all for the placeholder on a freshly added box, so the first
     // keystroke replaces it — re-editing existing text places the caret at
     // the end instead of arming a one-keystroke wipe of the whole paragraph.
-    if (element.text !== NEW_TEXT_PLACEHOLDER) range.collapse(false)
+    if (!element.isPlaceholder) range.collapse(false)
     const selection = window.getSelection()
     selection?.removeAllRanges()
     selection?.addRange(range)

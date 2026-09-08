@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
-import { ScrapElement, ImageScrapElement, PAGE_WIDTH } from "@/types/scrapbook"
+import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextElement } from "@/types/scrapbook"
 import { createEntry, updateEntry, Entry } from "@/services/api"
+import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
 import { Loader2, X } from "lucide-react"
 import { toast } from "sonner"
 
@@ -13,12 +14,19 @@ interface DiaryFormProps {
   initialData?: Entry | null;
   token: string | undefined;
   userId: number | undefined;
+  userName?: string;
 }
 
-export function DiaryForm({ onSuccess, initialData, token, userId }: DiaryFormProps) {
+export function DiaryForm({ onSuccess, initialData, token, userId, userName }: DiaryFormProps) {
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState(initialData?.title || "")
-  const [elements, setElements] = useState<ScrapElement[]>(initialData?.layout?.elements || [])
+  // A brand-new entry (no initialData) opens with a text box already primed
+  // for typing, seeded with the same invite as the composer card.
+  const [elements, setElements] = useState<ScrapElement[]>(() =>
+    initialData
+      ? initialData.layout?.elements || []
+      : [createPlaceholderTextElement(getEntryPlaceholderText(userName))]
+  )
   // Images added via the gallery button never become canvas elements, so they
   // can't be recovered from `elements` on edit — reconstruct them as whatever
   // in initialData.images isn't already represented by an image element.
@@ -33,8 +41,10 @@ export function DiaryForm({ onSuccess, initialData, token, userId }: DiaryFormPr
 
   useEffect(() => {
     setTitle(initialData?.title || "")
+    // No initialData means the new-entry state seeded above (placeholder text
+    // box) should stand — only resync elements when there's real data to load.
     const nextElements = initialData?.layout?.elements || []
-    setElements(nextElements)
+    if (initialData) setElements(nextElements)
     const canvasSrcs = new Set(
       nextElements.filter((el): el is ImageScrapElement => el.type === "image").map((el) => el.src)
     )

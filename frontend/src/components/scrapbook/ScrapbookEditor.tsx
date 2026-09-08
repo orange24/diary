@@ -1,6 +1,6 @@
 "use client"
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import Moveable from "react-moveable"
 import {
   ScrapElement,
@@ -60,6 +60,17 @@ export function ScrapbookEditor({
 
   const scale = scaleProp ?? autoScale
 
+  // A brand-new entry opens with its seeded placeholder text box already
+  // armed for typing, so the user doesn't have to double-click it first.
+  useEffect(() => {
+    const placeholder = elements.find((e) => e.type === "text" && e.isPlaceholder)
+    if (placeholder) {
+      setSelectedId(placeholder.id)
+      setEditingId(placeholder.id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const canvasHeight = useMemo(
     () => Math.max(PAGE_HEIGHT_MIN, PAGE_HEIGHT_MIN + extraHeight, ...elements.map((e) => e.y + e.height + 80)),
     [elements, extraHeight]
@@ -89,6 +100,7 @@ export function ScrapbookEditor({
       color: "#222222",
       fontFamily: "Prompt",
       fontSize: 18,
+      isPlaceholder: true,
     }
     onChange([...elements, newElement])
     setSelectedId(newElement.id)
@@ -247,7 +259,7 @@ export function ScrapbookEditor({
                   element={el}
                   editable={editable}
                   isEditing={editingId === el.id}
-                  onChangeText={(text) => updateElement(el.id, { text })}
+                  onChangeText={(text) => updateElement(el.id, { text, isPlaceholder: false })}
                   onFinishEditing={() => setEditingId(null)}
                 />
               ) : (

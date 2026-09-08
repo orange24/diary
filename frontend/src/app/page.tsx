@@ -192,7 +192,14 @@ export default function DiaryDashboard() {
                 {selectedEntry ? "✨ แก้ไขบันทึกความทรงจำ" : "✍️ บันทึกเรื่องราวใหม่"}
               </DialogTitle>
             </DialogHeader>
-            <DiaryForm onSuccess={handleSuccess} initialData={selectedEntry} token={token} userId={user?.userId} />
+            <DiaryForm
+              key={selectedEntry?.id ?? "new"}
+              onSuccess={handleSuccess}
+              initialData={selectedEntry}
+              token={token}
+              userId={user?.userId}
+              userName={user?.full_name}
+            />
           </div>
         </DialogContent>
       </Dialog>

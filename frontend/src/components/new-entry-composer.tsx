@@ -2,6 +2,7 @@
 
 import { User } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
 
 interface NewEntryComposerProps {
   onNewEntry?: () => void
@@ -33,7 +34,7 @@ export function NewEntryComposer({ onNewEntry, userName }: NewEntryComposerProps
         </AvatarFallback>
       </Avatar>
       <span className="flex-1 rounded-full bg-muted px-4 py-2.5 text-muted-foreground transition-colors hover:bg-muted/70">
-        วันนี้มีเรื่องราวอะไรอยากบันทึกไหม, {userName}?
+        {getEntryPlaceholderText(userName)}
       </span>
     </button>
   )
