@@ -91,7 +91,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId }: DiaryFormPr
       {galleryImages.length > 0 && (
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground">
-            รูปแกลเลอรี (ดูเต็มๆ ได้ ไม่แสดงในหน้าบันทึก)
+            รูปแกลเลอรี
           </label>
           <div className="flex flex-wrap gap-3">
             {galleryImages.map((src, index) => (
