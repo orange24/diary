@@ -2,8 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react"
 import { Entry } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
@@ -84,6 +90,35 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
               <span>By {entry.created_by || 'Anonymous'}</span>
               <span>{entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}</span>
             </div>
+
+            <CardAction>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <MoreVertical className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    disabled={!entry.layout}
+                    onClick={() => entry.layout && onEdit?.(entry.id)}
+                    title={!entry.layout ? "บันทึกเก่า ไม่รองรับการแก้ไข — กรุณาลบแล้วสร้างใหม่" : undefined}
+                  >
+                    <Pencil className="size-4" /> แก้ไข
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => onDelete?.(entry.id)}
+                  >
+                    <Trash2 className="size-4" /> ลบ
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardAction>
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -103,22 +138,6 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
               />
             )}
           </CardContent>
-
-          <CardFooter className="flex justify-end gap-2 pt-2 pb-4 px-6 border-t border-border">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!entry.layout}
-              title={!entry.layout ? "บันทึกเก่า ไม่รองรับการแก้ไข — กรุณาลบแล้วสร้างใหม่" : undefined}
-              onClick={() => entry.layout && onEdit?.(entry.id)}
-              className="text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Pencil className="h-4 w-4 mr-1.5" /> แก้ไข
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onDelete?.(entry.id)} className="text-destructive hover:bg-destructive/10 rounded-lg">
-              <Trash2 className="h-4 w-4 mr-1.5" /> ลบ
-            </Button>
-          </CardFooter>
         </Card>
         )
       })}
