@@ -3,11 +3,13 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, PlayCircle } from "lucide-react"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { Entry } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
 import { ScrapbookPreview } from "@/components/scrapbook/ScrapbookPreview"
+import { GalleryMosaic } from "@/components/gallery-mosaic"
+import { isVideo, getDisplayMedia } from "@/lib/media-utils"
 
 interface DiaryGridProps {
   entries: Entry[]
@@ -24,34 +26,6 @@ const getCleanHtml = (html: string) => {
     ],
     ALLOWED_ATTR: ['href', 'target', 'class']
   });
-};
-
-const MAX_VISIBLE_GALLERY_THUMBS = 4
-
-const isVideo = (path: string) => {
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
-  return videoExtensions.some(ext => path.toLowerCase().endsWith(ext));
-};
-
-const getDisplayMedia = (path: string) => {
-  if (!path) return "";
-  
-  if (path.startsWith('http')) {
-    if (isVideo(path)) {
-      return path.replace(/\/upload\//, "/upload/so_auto/").replace(/\.[^/.]+$/, ".jpg");
-    }
-    return path;
-  }
-  
-  const baseUrl = process.env.NEXT_PUBLIC_STORED_URL || "http://localhost:9090";
-  const fullPath = path.startsWith('/') ? `${baseUrl}${path}` : `${baseUrl}/${path}`;
-
-  if (isVideo(path)) {
-    const fileName = path.split('/').pop();
-    return `${baseUrl}/uploads/thumb-${fileName}.jpg`;
-  }
-
-  return fullPath;
 };
 
 export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
@@ -122,42 +96,12 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
               />
             )}
 
-            {hasImages && (() => {
-              const remaining = entry.images.length - MAX_VISIBLE_GALLERY_THUMBS
-              const visibleImages = entry.images.slice(0, MAX_VISIBLE_GALLERY_THUMBS)
-
-              return (
-                <div className="flex gap-3">
-                  {visibleImages.map((path, index) => {
-                    const isOverflowTile = remaining > 0 && index === visibleImages.length - 1
-                    return (
-                      <div
-                        key={index}
-                        className="relative flex-none size-20 rounded-xl overflow-hidden border border-border cursor-pointer transition-all duration-300 hover:ring-2 hover:ring-primary hover:z-20 m-[2px]"
-                        onClick={() => openLightbox(entry.images, index)}
-                      >
-                        <img
-                          src={getDisplayMedia(path)}
-                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                          alt="Media thumbnail"
-                          loading="lazy"
-                        />
-                        {isVideo(path) && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
-                            <PlayCircle className="text-white size-6 opacity-90 drop-shadow-lg" />
-                          </div>
-                        )}
-                        {isOverflowTile && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-lg font-bold">
-                            +{remaining}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })()}
+            {hasImages && (
+              <GalleryMosaic
+                images={entry.images}
+                onImageClick={(index) => openLightbox(entry.images, index)}
+              />
+            )}
           </CardContent>
 
           <CardFooter className="flex justify-end gap-2 pt-2 pb-4 px-6 border-t border-border">
