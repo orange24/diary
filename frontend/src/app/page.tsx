@@ -138,8 +138,7 @@ export default function DiaryDashboard() {
 
           {/* Center: the feed */}
           <div className="min-w-0">
-            <div className="mb-10 space-y-1">
-              <h2 className="text-4xl font-extrabold tracking-tight text-foreground">Memory Lane</h2>
+            <div className="mb-10">
               <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
             </div>
 
