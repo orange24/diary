@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, PlayCircle, Images } from "lucide-react"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, PlayCircle } from "lucide-react"
 import { Entry } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
@@ -25,6 +25,8 @@ const getCleanHtml = (html: string) => {
     ALLOWED_ATTR: ['href', 'target', 'class']
   });
 };
+
+const MAX_VISIBLE_GALLERY_THUMBS = 4
 
 const isVideo = (path: string) => {
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
@@ -102,18 +104,6 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
           id={`entry-${entry.id}`}
           className="group relative flex flex-col bg-card overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 scroll-mt-24"
         >
-          {isScrapbook && hasImages && (
-            <button
-              type="button"
-              onClick={() => openLightbox(entry.images, 0)}
-              title={`ดูรูปภาพทั้งหมด (${entry.images.length})`}
-              className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-background/80 backdrop-blur-sm px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent transition-colors"
-            >
-              <Images className="size-3.5" />
-              {entry.images.length}
-            </button>
-          )}
-
           <CardHeader className="pb-2">
             <CardTitle className="text-xl font-bold text-card-foreground">{entry.title}</CardTitle>
             <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
@@ -132,29 +122,42 @@ export function DiaryGrid({ entries, onEdit, onDelete }: DiaryGridProps) {
               />
             )}
 
-            {hasImages && (
-              <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
-                {entry.images.map((path, index) => (
-                  <div
-                    key={index}
-                    className="relative flex-none w-72 h-48 rounded-2xl overflow-hidden border border-border cursor-pointer transition-all duration-300 hover:ring-2 hover:ring-primary hover:z-20 m-[2px]"
-                    onClick={() => openLightbox(entry.images, index)}
-                  >
-                    <img
-                      src={getDisplayMedia(path)}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                      alt="Media thumbnail"
-                      loading="lazy"
-                    />
-                    {isVideo(path) && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
-                        <PlayCircle className="text-white w-12 h-12 opacity-90 drop-shadow-lg" />
+            {hasImages && (() => {
+              const remaining = entry.images.length - MAX_VISIBLE_GALLERY_THUMBS
+              const visibleImages = entry.images.slice(0, MAX_VISIBLE_GALLERY_THUMBS)
+
+              return (
+                <div className="flex gap-3">
+                  {visibleImages.map((path, index) => {
+                    const isOverflowTile = remaining > 0 && index === visibleImages.length - 1
+                    return (
+                      <div
+                        key={index}
+                        className="relative flex-none size-20 rounded-xl overflow-hidden border border-border cursor-pointer transition-all duration-300 hover:ring-2 hover:ring-primary hover:z-20 m-[2px]"
+                        onClick={() => openLightbox(entry.images, index)}
+                      >
+                        <img
+                          src={getDisplayMedia(path)}
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                          alt="Media thumbnail"
+                          loading="lazy"
+                        />
+                        {isVideo(path) && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
+                            <PlayCircle className="text-white size-6 opacity-90 drop-shadow-lg" />
+                          </div>
+                        )}
+                        {isOverflowTile && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-lg font-bold">
+                            +{remaining}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </CardContent>
 
           <CardFooter className="flex justify-end gap-2 pt-2 pb-4 px-6 border-t border-border">
