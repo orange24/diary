@@ -144,7 +144,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         className="w-full h-12 text-lg font-bold bg-logo text-logo-foreground shadow-lg shadow-logo/20 hover:bg-logo/90"
         disabled={loading}
       >
-        {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> กำลังบันทึก...</> : (initialData ? "อัปเดตไดอารี่" : "Memory")}
+        {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> กำลังบันทึก...</> : "MEMORY"}
       </Button>
     </form>
   )
