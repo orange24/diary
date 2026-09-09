@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { BookOpen, LogOut, User, Home, Hash, Users } from "lucide-react"
-import { ThemeSwitcher } from "./theme-switcher"
+import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon } from "lucide-react"
+import { EditProfileDialog } from "./edit-profile-dialog"
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -30,6 +33,10 @@ interface DiaryHeaderProps {
 }
 
 export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: DiaryHeaderProps) {
+  const { setTheme, theme } = useTheme()
+  const isDark = theme === "dark"
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
+
   // สร้างชื่อย่อสำหรับ Avatar (เช่น Watchara Kittikum -> WK)
   const getInitials = (name?: string) => {
     if (!name) return <User className="size-4" />;
@@ -77,13 +84,8 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
           ))}
         </nav>
 
-        {/* Right Side: Actions & User Profile */}
+        {/* Right Side: User Profile */}
         <div className="flex items-center gap-3">
-          <ThemeSwitcher />
-
-          <div className="h-6 w-[1px] bg-white/30 mx-1" />
-
-          {/* User Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative size-10 rounded-full p-0 overflow-hidden hover:bg-muted">
@@ -94,7 +96,7 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            
+
             <DropdownMenuContent className="w-56 mt-2 rounded-xl shadow-xl border-primary/10" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
@@ -102,8 +104,21 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={onLogout} 
+              <DropdownMenuItem onClick={() => setIsEditProfileOpen(true)} className="cursor-pointer font-medium">
+                <UserCog className="mr-2 size-4" />
+                <span>แก้ไขโปรไฟล์</span>
+              </DropdownMenuItem>
+              <DropdownMenuCheckboxItem
+                checked={isDark}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                className="cursor-pointer font-medium"
+              >
+                <Moon className="mr-2 size-4" />
+                <span>โหมดมืด</span>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={onLogout}
                 className="text-destructive focus:text-destructive cursor-pointer font-medium"
               >
                 <LogOut className="mr-2 size-4" />
@@ -113,6 +128,8 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
           </DropdownMenu>
         </div>
       </div>
+
+      <EditProfileDialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen} />
     </header>
   )
 }

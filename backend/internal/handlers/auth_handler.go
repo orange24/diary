@@ -91,3 +91,71 @@ func (h *EntryHandler) Login(c *gin.Context) {
 		"full_name": dbUser.FullName,
 	})
 }
+
+// --- ดูโปรไฟล์ตัวเอง ---
+func (h *EntryHandler) GetProfile(c *gin.Context) {
+	userID := c.MustGet("user_id").(int)
+
+	var u models.User
+	query := `SELECT id, username, full_name,
+		COALESCE(to_char(birthdate, 'YYYY-MM-DD'), ''), COALESCE(gender, ''), COALESCE(country, ''),
+		COALESCE(facebook_link, ''), COALESCE(gmail_link, ''), COALESCE(apple_id_link, ''), COALESCE(x_link, '')
+		FROM users WHERE id = $1`
+
+	err := h.DB.QueryRow(query, userID).Scan(
+		&u.ID, &u.Username, &u.FullName, &u.Birthdate, &u.Gender, &u.Country,
+		&u.FacebookLink, &u.GmailLink, &u.AppleIDLink, &u.XLink,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, u)
+}
+
+type UpdateProfileInput struct {
+	FullName     string `json:"full_name"`
+	Birthdate    string `json:"birthdate"`
+	Gender       string `json:"gender"`
+	Country      string `json:"country"`
+	FacebookLink string `json:"facebook_link"`
+	GmailLink    string `json:"gmail_link"`
+	AppleIDLink  string `json:"apple_id_link"`
+	XLink        string `json:"x_link"`
+}
+
+// --- แก้ไขโปรไฟล์ตัวเอง --- (username/password เปลี่ยนที่นี่ไม่ได้ — คนละหน้าที่)
+func (h *EntryHandler) UpdateProfile(c *gin.Context) {
+	userID := c.MustGet("user_id").(int)
+
+	var input UpdateProfileInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// birthdate is a DATE column — an empty string fails Postgres's date
+	// parser, so a cleared birthdate must go in as NULL instead of "".
+	var birthdate interface{}
+	if input.Birthdate != "" {
+		birthdate = input.Birthdate
+	}
+
+	query := `UPDATE users SET
+		full_name = $1, birthdate = $2, gender = $3, country = $4,
+		facebook_link = $5, gmail_link = $6, apple_id_link = $7, x_link = $8
+		WHERE id = $9`
+
+	_, err := h.DB.Exec(query,
+		input.FullName, birthdate, input.Gender, input.Country,
+		input.FacebookLink, input.GmailLink, input.AppleIDLink, input.XLink,
+		userID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Profile updated", "full_name": input.FullName})
+}

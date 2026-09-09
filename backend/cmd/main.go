@@ -57,6 +57,9 @@ func main() {
 		authorized.GET("/entries/:id", entryHandler.GetEntry)
 		authorized.POST("/upload", entryHandler.UploadFiles)
 
+		authorized.GET("/profile", entryHandler.GetProfile)
+		authorized.PUT("/profile", entryHandler.UpdateProfile)
+
 		authorized.GET("/users/search", entryHandler.SearchUsers)
 		authorized.GET("/friends", entryHandler.ListFriends)
 		authorized.GET("/friends/requests", entryHandler.ListFriendRequests)

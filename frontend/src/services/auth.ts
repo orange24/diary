@@ -37,3 +37,42 @@ export const register = async (userData: any) => {
 
   return response.json();
 };
+
+export interface ProfileData {
+  id: number;
+  username: string;
+  full_name: string;
+  birthdate: string;
+  gender: string;
+  country: string;
+  facebook_link: string;
+  gmail_link: string;
+  apple_id_link: string;
+  x_link: string;
+}
+
+export const getProfile = async (token: string): Promise<ProfileData> => {
+  const response = await fetch(`${API_BASE_URL}/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to load profile');
+  }
+  return response.json();
+};
+
+export type ProfileUpdate = Omit<ProfileData, 'id' | 'username'>;
+
+export const updateProfile = async (data: ProfileUpdate, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/profile`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to update profile');
+  }
+  return response.json();
+};

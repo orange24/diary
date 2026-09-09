@@ -13,6 +13,9 @@ interface AuthContextType {
   user: UserData | undefined;
   handleLogin: (token: string, userData: UserData) => void;
   handleLogout: () => void;
+  // Syncs display-relevant fields (currently just full_name) after a
+  // profile edit, without requiring a fresh login.
+  updateUser: (patch: Partial<UserData>) => void;
   isLoading: boolean;
 }
 
@@ -62,8 +65,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(undefined)
   }
 
+  const updateUser = (patch: Partial<UserData>) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const next = { ...prev, ...patch }
+      localStorage.setItem("user", JSON.stringify(next))
+      return next
+    })
+  }
+
   return (
-    <AuthContext.Provider value={{ token, user, handleLogin, handleLogout, isLoading }}>
+    <AuthContext.Provider value={{ token, user, handleLogin, handleLogout, updateUser, isLoading }}>
       {/* ป้องกันหน้ากระพริบ (FOUC) ขณะกำลังเช็ค Token */}
       {!isLoading && children}
     </AuthContext.Provider>
