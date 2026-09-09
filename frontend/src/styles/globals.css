@@ -52,39 +52,74 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 5. Book-opening dialog: the "New/Edit Entry" modal swings open like a
-   book cover instead of the default dialog zoom/fade. Plain CSS classes
-   (not Tailwind's animate-in/zoom-in utilities) so it can't collide with
-   or get partially overridden by the shared DialogContent's own
-   animation classes — this is a deliberately separate component. */
-@keyframes book-open {
-  0% {
-    transform: perspective(1800px) rotateY(-100deg);
-    opacity: 0.4;
-  }
-  100% {
-    transform: perspective(1800px) rotateY(0deg);
-    opacity: 1;
-  }
-}
+/* 5. Book-opening dialog: the "New/Edit Entry" modal looks like a closed
+   book cover that swings open along its spine to reveal an already-ready
+   page underneath. Plain CSS classes (not Tailwind's animate-in/zoom-in
+   utilities) so it can't collide with or get partially overridden by the
+   shared DialogContent's own animation classes — this is a deliberately
+   separate component.
 
-@keyframes book-close {
-  0% {
-    transform: perspective(1800px) rotateY(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: perspective(1800px) rotateY(-100deg);
-    opacity: 0;
-  }
-}
-
+   The container itself (.book-dialog-content) never rotates — it only
+   fades/scales in place, so it must carry its own centering transform
+   here (the Tailwind translate utilities were removed from the component
+   to avoid a keyframe overriding them mid-animation). The rotateY "opening"
+   motion lives entirely on the .book-dialog-cover flap layered on top of
+   the page, targeted via a descendant selector since Radix only sets
+   data-state on the dialog content root, not on arbitrary children. */
 .book-dialog-content {
-  transform-origin: left center;
+  transform: translate(-50%, -50%);
 }
 .book-dialog-content[data-state="open"] {
-  animation: book-open 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: book-container-in 0.2s ease-out;
 }
 .book-dialog-content[data-state="closed"] {
-  animation: book-close 0.3s ease-in forwards;
+  animation: book-container-out 0.25s ease-in forwards;
+}
+@keyframes book-container-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes book-container-out {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+}
+
+.book-dialog-cover {
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transform: perspective(1800px) rotateY(0deg);
+}
+.book-dialog-content[data-state="open"] .book-dialog-cover {
+  animation: book-cover-open 0.6s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.book-dialog-content[data-state="closed"] .book-dialog-cover {
+  animation: book-cover-close 0.3s ease-in forwards;
+}
+@keyframes book-cover-open {
+  0% {
+    transform: perspective(1800px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(1800px) rotateY(-150deg);
+  }
+}
+@keyframes book-cover-close {
+  0% {
+    transform: perspective(1800px) rotateY(-150deg);
+  }
+  100% {
+    transform: perspective(1800px) rotateY(0deg);
+  }
 }
