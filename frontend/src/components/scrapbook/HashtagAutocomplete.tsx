@@ -19,7 +19,12 @@ export function HashtagAutocomplete({ query, hashtags, position, onSelect }: Has
 
   return (
     <div
-      className="fixed z-[200] w-56 overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-lg"
+      // pointer-events-auto: while the entry dialog is open, Radix sets
+      // pointer-events:none on <body> so only the dialog's own content stays
+      // clickable. This popover is portaled straight to <body> (to escape
+      // the scrapbook canvas's transform), so it inherits that none and is
+      // otherwise visible but unclickable without this override.
+      className="fixed z-[200] w-56 overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-lg pointer-events-auto"
       style={{ top: position.top, left: position.left }}
     >
       {matches.map((tag) => (
