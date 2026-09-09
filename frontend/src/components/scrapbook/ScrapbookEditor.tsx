@@ -199,6 +199,7 @@ export function ScrapbookEditor({
       {editable && (
         <Toolbar
           selectedElement={selectedElement}
+          isEditingSelectedText={selectedId !== null && selectedId === editingId}
           onAddText={handleAddText}
           onAddImageFile={handleAddImageFile}
           onAddGalleryImage={handleAddGalleryImage}

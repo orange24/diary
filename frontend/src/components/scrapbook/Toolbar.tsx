@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Type, ImagePlus, Images, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine, Sticker } from "lucide-react"
+import { Type, ImagePlus, Images, Trash2, BringToFront, SendToBack, ArrowDownToLine, ArrowUpToLine, Sticker, Bold, Italic, Underline } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrapElement, StickerOption, FONT_OPTIONS } from "@/types/scrapbook"
@@ -9,6 +9,10 @@ import { StickerPicker } from "./StickerPicker"
 
 interface ToolbarProps {
   selectedElement: ScrapElement | null
+  // Whether the selected element is the text box currently being typed
+  // into — bold/italic/underline act on document.execCommand, which only
+  // has an effect while a contentEditable is focused with a selection.
+  isEditingSelectedText: boolean
   onAddText: () => void
   onAddImageFile: (file: File) => void
   onAddGalleryImage: (file: File) => void
@@ -24,6 +28,7 @@ interface ToolbarProps {
 
 export function Toolbar({
   selectedElement,
+  isEditingSelectedText,
   onAddText,
   onAddImageFile,
   onAddGalleryImage,
@@ -145,6 +150,45 @@ export function Toolbar({
                 className="h-8 w-16 rounded-md border border-border bg-background px-2 text-sm"
                 title="ขนาดตัวอักษร"
               />
+
+              {isEditingSelectedText && (
+                <>
+                  {/* onMouseDown preventDefault keeps focus (and the current
+                      text selection) inside the contentEditable box instead
+                      of moving it to the button — execCommand only affects
+                      whatever is currently selected there. */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => document.execCommand("bold")}
+                    title="ตัวหนา"
+                  >
+                    <Bold className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => document.execCommand("italic")}
+                    title="ตัวเอียง"
+                  >
+                    <Italic className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => document.execCommand("underline")}
+                    title="ขีดเส้นใต้"
+                  >
+                    <Underline className="size-4" />
+                  </Button>
+                </>
+              )}
             </>
           )}
 
