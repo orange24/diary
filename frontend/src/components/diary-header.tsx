@@ -42,15 +42,15 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-header-background/80 backdrop-blur-md border-b">
+    <header className="sticky top-0 z-40 w-full bg-logo border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        
+
         {/* Left Side: Logo & Title */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-logo shadow-lg shadow-logo/20">
-            <BookOpen className="size-5 text-logo-foreground" />
+          <div className="flex items-center justify-center size-10 rounded-xl bg-white shadow-lg">
+            <BookOpen className="size-5 text-logo" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight uppercase text-logo hidden md:block">
+          <h1 className="text-xl font-bold tracking-tight uppercase text-white hidden md:block">
             Papymory
           </h1>
         </div>
@@ -66,12 +66,12 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
               onClick={() => onViewChange(view)}
               className={cn(
                 "relative flex h-full items-center px-2 transition-colors",
-                activeView === view ? "text-logo" : "text-muted-foreground hover:text-foreground"
+                activeView === view ? "text-white" : "text-white/60 hover:text-white/90"
               )}
             >
               <Icon className="size-6" />
               {activeView === view && (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-logo" />
+                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-white" />
               )}
             </button>
           ))}
@@ -81,7 +81,7 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
 
-          <div className="h-6 w-[1px] bg-border mx-1" />
+          <div className="h-6 w-[1px] bg-white/30 mx-1" />
 
           {/* User Profile Dropdown */}
           <DropdownMenu>
