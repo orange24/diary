@@ -271,6 +271,7 @@ export function ScrapbookEditor({
                   isEditing={editingId === el.id}
                   onChangeText={(text) => updateElement(el.id, { text, isPlaceholder: false })}
                   onFinishEditing={() => setEditingId(null)}
+                  onResize={(size) => updateElement(el.id, size)}
                   onHashtagClick={onHashtagClick}
                   friends={friends}
                   hashtagSuggestions={hashtagSuggestions}
