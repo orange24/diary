@@ -7,6 +7,7 @@ import (
 	"diary_app/backend/internal/middleware"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -25,8 +26,18 @@ func main() {
 	r := gin.Default()
 
 	// Configure CORS
+	// อ่านรายชื่อ origin ที่อนุญาตจาก env (คั่นด้วย comma) เพื่อให้ปรับได้ต่อ environment
+	// โดยไม่ต้อง hardcode ในโค้ด — ค่า default คือ frontend ตอน dev บนเครื่อง
+	corsOrigins := []string{"http://localhost:3000"}
+	if raw := os.Getenv("CORS_ALLOWED_ORIGINS"); raw != "" {
+		corsOrigins = strings.Split(raw, ",")
+		for i := range corsOrigins {
+			corsOrigins[i] = strings.TrimSpace(corsOrigins[i])
+		}
+	}
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"}, // URL ของ Next.js
+		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

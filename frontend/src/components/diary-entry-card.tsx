@@ -3,6 +3,8 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Calendar } from "lucide-react"
+// ✅ 1. Import DOMPurify
+import DOMPurify from "isomorphic-dompurify"
 
 interface DiaryEntry {
   id: string
@@ -24,22 +26,41 @@ const isVideo = (path: string) => {
 };
 
 const getDisplayMedia = (path: string) => {
-  // ✅ ถ้า path เริ่มต้นด้วย http แสดงว่าเป็นรูปจาก Cloud (Cloudinary)
+  if (!path) return "";
+  
   if (path.startsWith('http')) {
     if (isVideo(path)) {
-      return path.replace(/\.[^/.]+$/, ".jpg"); 
+      return path.replace(/\/upload\//, "/upload/so_auto/").replace(/\.[^/.]+$/, ".jpg");
     }
     return path;
   }
   
-  // กรณีรูปเก่าที่ยังอยู่ในเครื่องเดิม (ถ้ามี)
-  return `${process.env.NEXT_PUBLIC_STORED_URL}${path}`;
+  const baseUrl = process.env.NEXT_PUBLIC_STORED_URL || "http://localhost:9090";
+  const fullPath = path.startsWith('/') ? `${baseUrl}${path}` : `${baseUrl}/${path}`;
+
+  if (isVideo(path)) {
+    const fileName = path.split('/').pop();
+    return `${baseUrl}/uploads/thumb-${fileName}.jpg`;
+  }
+
+  return fullPath;
+};
+
+const getSummary = (html: string) => {
+  // ลบ Tag HTML ออกทั้งหมดเพื่อเอาแค่ Text มาทำ Summary
+  const cleanText = html.replace(/<[^>]*>?/gm, '');
+  if (cleanText.length > 100) {
+    return cleanText.substring(0, 100) + "...";
+  }
+  return cleanText;
 };
 
 export function DiaryEntryCard({ entry, onEdit, onDelete }: DiaryEntryCardProps) {
-  console.log(`Entry ID: ${entry.id} | Images:`, entry.images);
+  // ✅ 3. กรอง HTML เพื่อความปลอดภัย (กรณีอยากแสดงผลแบบ Rich Text ใน Card)
+  const sanitizedContent = DOMPurify.sanitize(entry.content);
+
   return (
-    <Card className="bg-card hover:shadow-md transition-shadow duration-200">
+    <Card className="bg-card hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
           <Calendar className="size-3" />
@@ -47,42 +68,46 @@ export function DiaryEntryCard({ entry, onEdit, onDelete }: DiaryEntryCardProps)
         </div>
         <CardTitle className="text-lg line-clamp-1">{entry.title}</CardTitle>
       </CardHeader>
-      <CardContent className="pb-4">
-        <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed">
-          {entry.content}
-        </p>
+      
+      <CardContent className="pb-4 flex-grow space-y-3">
+        {/* ✅ 4. เลือกใช้: แสดงแบบข้อความล้วน (Summary) หรือ Rich Text สั้นๆ */}
+        <div 
+          className="prose prose-sm dark:prose-invert text-muted-foreground leading-relaxed line-clamp-3"
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }} 
+        />
+
         {entry.images && entry.images.length > 0 && (
-          <div className="relative w-full h-48 overflow-hidden rounded-t-lg bg-gray-100">
+          <div className="relative w-full h-40 overflow-hidden rounded-lg bg-gray-100 mt-2">
             <img
               src={getDisplayMedia(`${entry.images[0]}`)}
               alt={entry.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
             />
             {entry.images.length > 1 && (
-              <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                +{entry.images.length - 1} รูป
+              <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-md font-medium">
+                +{entry.images.length - 1} รูปภาพ
               </span>
             )}
           </div>
         )}
       </CardContent>
-      <CardFooter className="gap-2 pt-0">
+
+      <CardFooter className="gap-2 pt-2 pb-4 border-t bg-slate-50/50">
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="sm"
           onClick={() => onEdit?.(entry.id)}
-          aria-label="Edit entry"
+          className="h-8 px-3 text-xs"
         >
-          <Pencil className="size-4" />
+          <Pencil className="size-3.5 mr-1" /> แก้ไข
         </Button>
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="sm"
           onClick={() => onDelete?.(entry.id)}
-          aria-label="Delete entry"
-          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="h-8 px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
         >
-          <Trash2 className="size-4" />
+          <Trash2 className="size-3.5 mr-1" /> ลบ
         </Button>
       </CardFooter>
     </Card>

@@ -1,39 +1,85 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* 1. กำหนดค่าสีเริ่มต้นที่ :root */
+/* 1. โทนสีพื้นฐาน: เทาสว่างๆ ล้วน (light mode) */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --background: oklch(0.97 0 0);
+  --foreground: oklch(0.205 0 0);
+  --primary: oklch(0.35 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
+  --border: oklch(0.89 0 0);
+
+  /* Card / popover / dropdown surfaces — สีขาว ตัดกับพื้นหลังเทา */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0 0);
+
+  /* Muted: พื้นผิว/ข้อความรอง เช่น วันที่, footer การ์ด */
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+
+  /* Accent: hover state ของปุ่ม ghost / menu item */
+  --accent: oklch(0.94 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+
+  --secondary: oklch(0.94 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --ring: oklch(0.6 0 0);
+  --input: oklch(0.89 0 0);
+
+  /* สี logo ชมพู sakura น่ารักๆ — คงที่ ไม่ผูกกับ theme */
+  --logo: oklch(0.86 0.09 10);
+  --logo-foreground: oklch(0.3 0.06 10);
+
+  /* พื้นหลัง header — ชมพูอ่อนมากๆ ให้เข้าธีมกับ logo แทนสีเทาเรียบๆ */
+  --header-background: oklch(0.975 0.012 10);
+
+  /* เงารอบหน้ากระดาษ scrapbook (ตัวกระดาษเองคงสีขาวไว้เสมอ เพื่อให้พิมพ์ออกมาถูกสี
+     แต่เงาที่ "กรอบ" รอบๆ ปรับตาม theme ให้กระดาษดูกลมกลืนกับพื้นหลังมากขึ้น) */
+  --canvas-frame-shadow: oklch(0 0 0 / 0.12);
 }
 
-/* 2. บังคับเปลี่ยนค่า Variables เมื่อ data-theme เปลี่ยน */
-/* ใช้ [data-theme] ตรงๆ เพื่อให้ Specificity สูงพอจะทับ :root */
-[data-theme='week-1'] {
-  --background: oklch(0.98 0.014 213.1);
-  --primary: oklch(0.623 0.214 259.815);
-  --primary-foreground: oklch(0.98 0 0);
-}
+/* 2. Dark mode: เทาเข้ม ให้ user เลือกเปิดเองผ่านปุ่ม toggle */
+/* หมายเหตุ: ไม่ override --logo ที่นี่ เพื่อให้สี logo คงเดิมทั้ง light/dark mode */
+[data-theme='dark'] {
+  --background: oklch(0.22 0 0);
+  --foreground: oklch(0.94 0 0);
+  --primary: oklch(0.75 0 0);
+  --primary-foreground: oklch(0.145 0 0);
+  --border: oklch(0.32 0 0);
 
-[data-theme='week-2'] {
-  --background: oklch(0.98 0.01 10);
-  --primary: oklch(0.75 0.15 10);
-  --primary-foreground: oklch(0.98 0 0);
-}
+  --card: oklch(0.26 0 0);
+  --card-foreground: oklch(0.94 0 0);
+  --popover: oklch(0.26 0 0);
+  --popover-foreground: oklch(0.94 0 0);
 
-[data-theme='week-3'] {
-  --background: oklch(0.98 0.01 145);
-  --primary: oklch(0.55 0.15 145);
-  --primary-foreground: oklch(0.98 0 0);
-}
+  --muted: oklch(0.3 0 0);
+  --muted-foreground: oklch(0.65 0 0);
 
-[data-theme='week-4'] {
-  --background: oklch(0.98 0.02 40);
-  --primary: oklch(0.7 0.18 40);
-  --primary-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.32 0 0);
+  --accent-foreground: oklch(0.94 0 0);
+
+  --secondary: oklch(0.32 0 0);
+  --secondary-foreground: oklch(0.94 0 0);
+
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --ring: oklch(0.55 0 0);
+  --input: oklch(0.32 0 0);
+
+  /* กระดาษขาวยังคงขาวไว้ แต่ใน dark mode เงารอบๆ เปลี่ยนเป็น glow สีอ่อนแทนเงาดำ
+     เพราะเงาดำจะจมหายไปกับพื้นหลังที่เข้มอยู่แล้ว */
+  --canvas-frame-shadow: oklch(1 0 0 / 0.08);
+
+  /* พื้นหลัง header ใน dark mode — เข้มเหมือน background ปกติ แต่แต่งเป็นชมพูจางๆ
+     นิดเดียว ให้ยังพอสัมผัสได้ว่าเป็นสี logo โดยไม่โดดเกินไปกับพื้นมืด */
+  --header-background: oklch(0.26 0.015 10);
 }
 
 /* 3. เชื่อมต่อ Variables เข้ากับ Tailwind Theme Engine */
@@ -45,12 +91,30 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-logo: var(--logo);
+  --color-logo-foreground: var(--logo-foreground);
+  --color-header-background: var(--header-background);
 }
 
 /* 4. โหลดมาตรฐาน Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@tailwindcss typography;
 
 /* 5. Book-opening dialog: the "New/Edit Entry" modal looks like a closed
    book cover that swings open along its spine to reveal an already-ready

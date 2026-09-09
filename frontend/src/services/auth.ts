@@ -16,7 +16,7 @@ export const login = async (username: string, password: string) => {
 
      return response.json(); // จะได้รับ { "token": "..." }
     } catch (err) {
-        // throw err;
+        throw err;
     }
 };
 

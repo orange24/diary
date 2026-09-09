@@ -1,0 +1,28 @@
+# Production overrides: point the backend at the Supabase-hosted Postgres
+# and the frontend at the deployed backend origin (Cloud Run), instead of
+# the local `db` service / localhost used by docker-compose.yml.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+#
+# Note: actual production currently deploys the backend to Cloud Run and the
+# DB to Supabase directly (not via this compose file) — this override exists
+# so the Supabase connection config isn't lost, and to support a docker-based
+# deploy of the same stack if/when that's needed.
+services:
+  backend:
+    environment:
+      - DATABASE_URL=postgresql://postgres:6vT008KmEwOdBv3Q@db.bedjoqhraahwojltjbce.supabase.co:5432/diary?sslmode=disable
+      # TODO: set this to the deployed frontend's real origin before using this override.
+      - CORS_ALLOWED_ORIGINS=https://diary-frontend-847701498835.asia-southeast1.run.app
+
+  frontend:
+    build:
+      # NEXT_PUBLIC_* vars are inlined at build time, so they must be
+      # passed as build args here, not just as runtime `environment`.
+      args:
+        - NEXT_PUBLIC_API_BASE_URL=https://diary-backend-847701498835.asia-southeast1.run.app
+        - NEXT_PUBLIC_STORED_URL=https://diary-backend-847701498835.asia-southeast1.run.app
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=https://diary-backend-847701498835.asia-southeast1.run.app
+      - NEXT_PUBLIC_STORED_URL=https://diary-backend-847701498835.asia-southeast1.run.app

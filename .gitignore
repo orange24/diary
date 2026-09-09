@@ -45,4 +45,7 @@ next-env.d.ts
 
 #uploaded files
 backend/uploads/*
-backend/uploads
+backend/uploads.superpowers/
+
+# claude code local settings (personal permission overrides, not shared)
+.claude/settings.local.json
