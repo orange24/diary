@@ -37,23 +37,17 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    const loginAction = login(values.username, values.password)
-
-    toast.promise(loginAction, {
-      loading: 'กำลังตรวจสอบข้อมูล...',
-      success: (data) => {
-        handleLogin(data.token, {
-            userId: data.userId,
-            username: data.username,
-            full_name: data.full_name
-        });
-        setTimeout(() => {
-          router.push("/")
-        }, 1000)
-        return `ยินดีต้อนรับคุณ ${data.full_name}!`;
-      },
-      error: (err) => err.message || "Login failed",
-    })
+    try {
+      const data = await login(values.username, values.password)
+      handleLogin(data.token, {
+        userId: data.userId,
+        username: data.username,
+        full_name: data.full_name,
+      })
+      router.push("/")
+    } catch (err: any) {
+      toast.error(err.message || "Login failed")
+    }
   }
 
   // สร้างฟังก์ชันช่วยเลือก Class สำหรับ Shake และ Focus Color
