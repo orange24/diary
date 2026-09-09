@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon } from "lucide-react"
-import { EditProfileDialog } from "./edit-profile-dialog"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -33,9 +32,9 @@ interface DiaryHeaderProps {
 }
 
 export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: DiaryHeaderProps) {
+  const router = useRouter()
   const { setTheme, theme } = useTheme()
   const isDark = theme === "dark"
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
 
   // สร้างชื่อย่อสำหรับ Avatar (เช่น Watchara Kittikum -> WK)
   const getInitials = (name?: string) => {
@@ -104,7 +103,7 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsEditProfileOpen(true)} className="cursor-pointer font-medium">
+              <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer font-medium">
                 <UserCog className="mr-2 size-4" />
                 <span>แก้ไขโปรไฟล์</span>
               </DropdownMenuItem>
@@ -128,8 +127,6 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
           </DropdownMenu>
         </div>
       </div>
-
-      <EditProfileDialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen} />
     </header>
   )
 }
