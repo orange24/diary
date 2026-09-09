@@ -56,6 +56,13 @@ func main() {
 		authorized.PUT("/entries/:id", entryHandler.UpdateEntry)
 		authorized.GET("/entries/:id", entryHandler.GetEntry)
 		authorized.POST("/upload", entryHandler.UploadFiles)
+
+		authorized.GET("/users/search", entryHandler.SearchUsers)
+		authorized.GET("/friends", entryHandler.ListFriends)
+		authorized.GET("/friends/requests", entryHandler.ListFriendRequests)
+		authorized.POST("/friends/request", entryHandler.SendFriendRequest)
+		authorized.POST("/friends/:id/accept", entryHandler.AcceptFriendRequest)
+		authorized.DELETE("/friends/:id", entryHandler.RemoveFriendship)
 	}
 
 	// 4. Start server

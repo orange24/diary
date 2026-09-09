@@ -9,6 +9,7 @@ import { DiaryTimelineSidebar } from "@/components/diary-timeline-sidebar"
 import { DiaryGrid } from "@/components/diary-grid"
 import { DiaryForm } from "@/components/diary-form"
 import { HashtagExplorer } from "@/components/hashtag-explorer"
+import { FriendsExplorer } from "@/components/friends-explorer"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getEntries, getEntry, deleteEntry, Entry } from "@/services/api"
 import { useAuth } from "@/context/auth-context"
@@ -173,6 +174,8 @@ export default function DiaryDashboard() {
                 onEdit={handleEdit}
                 onDelete={(id) => setDeleteId(id)}
               />
+            ) : activeView === "friends" ? (
+              <FriendsExplorer token={token} />
             ) : (
               <>
                 <div className="mb-10">

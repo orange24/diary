@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { BookOpen, LogOut, User, Home, Hash } from "lucide-react"
+import { BookOpen, LogOut, User, Home, Hash, Users } from "lucide-react"
 import { ThemeSwitcher } from "./theme-switcher"
 import {
   DropdownMenu,
@@ -14,7 +14,13 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
-export type DiaryView = "home" | "hashtags"
+export type DiaryView = "home" | "hashtags" | "friends"
+
+const NAV_ITEMS: { view: DiaryView; label: string; icon: typeof Home }[] = [
+  { view: "home", label: "Home", icon: Home },
+  { view: "hashtags", label: "Hashtag", icon: Hash },
+  { view: "friends", label: "Friends", icon: Users },
+]
 
 interface DiaryHeaderProps {
   onLogout?: () => void
@@ -49,37 +55,26 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
           </h1>
         </div>
 
-        {/* Center: Home / Hashtag nav — plain spaced-out icons, Facebook-style,
-            with a underline bar marking the active tab */}
+        {/* Center: Home / Hashtag / Friends nav — plain spaced-out icons,
+            Facebook-style, with an underline bar marking the active tab */}
         <nav className="flex h-full items-center gap-8 sm:gap-14">
-          <button
-            type="button"
-            title="Home"
-            onClick={() => onViewChange("home")}
-            className={cn(
-              "relative flex h-full items-center px-2 transition-colors",
-              activeView === "home" ? "text-logo" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Home className="size-6" />
-            {activeView === "home" && (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-logo" />
-            )}
-          </button>
-          <button
-            type="button"
-            title="Hashtag"
-            onClick={() => onViewChange("hashtags")}
-            className={cn(
-              "relative flex h-full items-center px-2 transition-colors",
-              activeView === "hashtags" ? "text-logo" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Hash className="size-6" />
-            {activeView === "hashtags" && (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-logo" />
-            )}
-          </button>
+          {NAV_ITEMS.map(({ view, label, icon: Icon }) => (
+            <button
+              key={view}
+              type="button"
+              title={label}
+              onClick={() => onViewChange(view)}
+              className={cn(
+                "relative flex h-full items-center px-2 transition-colors",
+                activeView === view ? "text-logo" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="size-6" />
+              {activeView === view && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-logo" />
+              )}
+            </button>
+          ))}
         </nav>
 
         {/* Right Side: Actions & User Profile */}

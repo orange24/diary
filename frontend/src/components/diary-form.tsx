@@ -6,6 +6,7 @@ import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
 import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextElement } from "@/types/scrapbook"
 import { createEntry, updateEntry, Entry } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
+import { FriendUser, getFriends } from "@/services/friends"
 import { Loader2, X } from "lucide-react"
 import { toast } from "sonner"
 
@@ -38,6 +39,17 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName }: D
     )
     return (initialData?.images || []).filter((src) => !canvasSrcs.has(src))
   })
+  // For the "@" mention autocomplete in the text editor below.
+  const [friends, setFriends] = useState<FriendUser[]>([])
+
+  useEffect(() => {
+    if (!token) return
+    getFriends(token)
+      .then(setFriends)
+      .catch(() => {
+        /* autocomplete is a nicety — a failed fetch just means no suggestions */
+      })
+  }, [token])
 
   useEffect(() => {
     setTitle(initialData?.title || "")
@@ -96,6 +108,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName }: D
           editable
           token={token}
           onGalleryImageAdded={(url) => setGalleryImages((prev) => [...prev, url])}
+          friends={friends}
         />
       </div>
 

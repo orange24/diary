@@ -16,6 +16,7 @@ import {
 import { TextElement } from "./TextElement"
 import { ImageElement } from "./ImageElement"
 import { Toolbar } from "./Toolbar"
+import { FriendUser } from "@/services/friends"
 
 interface ScrapbookEditorProps {
   elements: ScrapElement[]
@@ -25,6 +26,8 @@ interface ScrapbookEditorProps {
   scale?: number
   onGalleryImageAdded?: (url: string) => void
   onHashtagClick?: (tag: string) => void
+  // Friends to suggest when typing "@" inside a text box.
+  friends?: FriendUser[]
 }
 
 export function ScrapbookEditor({
@@ -35,6 +38,7 @@ export function ScrapbookEditor({
   scale: scaleProp,
   onGalleryImageAdded,
   onHashtagClick,
+  friends,
 }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -264,6 +268,7 @@ export function ScrapbookEditor({
                   onChangeText={(text) => updateElement(el.id, { text, isPlaceholder: false })}
                   onFinishEditing={() => setEditingId(null)}
                   onHashtagClick={onHashtagClick}
+                  friends={friends}
                 />
               ) : (
                 <ImageElement element={el} />

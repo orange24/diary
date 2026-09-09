@@ -17,6 +17,7 @@ import { ScrapbookPreview } from "@/components/scrapbook/ScrapbookPreview"
 import { GalleryMosaic } from "@/components/gallery-mosaic"
 import { isVideo, getDisplayMedia } from "@/lib/media-utils"
 import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
+import { linkifyMentions } from "@/lib/mentions"
 
 interface DiaryGridProps {
   entries: Entry[]
@@ -133,7 +134,7 @@ export function DiaryGrid({ entries, onEdit, onDelete, onHashtagClick }: DiaryGr
                   const tag = hashtagFromClick(e)
                   if (tag) onHashtagClick?.(tag)
                 }}
-                dangerouslySetInnerHTML={{ __html: linkifyHashtags(getCleanHtml(entry.content)) }}
+                dangerouslySetInnerHTML={{ __html: linkifyMentions(linkifyHashtags(getCleanHtml(entry.content))) }}
               />
             )}
 
