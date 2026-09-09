@@ -57,9 +57,7 @@ export function BookDialogContent({
           </div>
 
           {/* Cover — hinged at the spine, hides the page until it opens. */}
-          <div className="book-dialog-cover absolute inset-y-0 right-0 left-4 z-20 flex items-center justify-center bg-gradient-to-br from-logo to-logo/85 shadow-[inset_-6px_0_10px_rgba(0,0,0,0.15)]">
-            <span className="text-5xl drop-shadow-sm">✍️</span>
-          </div>
+          <div className="book-dialog-cover absolute inset-y-0 right-0 left-4 z-20 bg-gradient-to-br from-logo to-logo/85 shadow-[inset_-6px_0_10px_rgba(0,0,0,0.15)]" />
         </div>
       </DialogPrimitive.Content>
     </DialogPortal>

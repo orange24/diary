@@ -242,7 +242,7 @@ export default function DiaryDashboard() {
         <BookDialogContent className="sm:max-w-[960px]">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-2xl font-bold tracking-tight">
-              {selectedEntry ? "✨ แก้ไขบันทึกความทรงจำ" : "✍️ บันทึกเรื่องราวใหม่"}
+              {selectedEntry ? "✨ แก้ไขบันทึกความทรงจำ" : "บันทึกเรื่องราวใหม่"}
             </DialogTitle>
           </DialogHeader>
           <DiaryForm
