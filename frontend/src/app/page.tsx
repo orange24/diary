@@ -11,7 +11,8 @@ import { DiaryForm } from "@/components/diary-form"
 import { HashtagExplorer } from "@/components/hashtag-explorer"
 import { FriendsExplorer } from "@/components/friends-explorer"
 import { extractHashtags } from "@/lib/hashtags"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BookDialogContent } from "@/components/book-dialog-content"
 import { getEntries, getEntry, deleteEntry, Entry } from "@/services/api"
 import { useAuth } from "@/context/auth-context"
 import {
@@ -238,28 +239,22 @@ export default function DiaryDashboard() {
         setIsModalOpen(open)
         if(!open) setSelectedEntry(null)
       }}>
-        <DialogContent className="sm:max-w-[960px] max-h-[95vh] overflow-y-auto rounded-3xl border-primary/10 shadow-2xl p-0">
-          {/* DialogContent is a CSS grid; without min-w-0 this grid item's
-              default min-width:auto lets the fixed-width scrapbook canvas
-              deep inside force the whole dialog to overflow horizontally
-              on narrow screens instead of the canvas scaling down to fit. */}
-          <div className="min-w-0 p-6">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-2xl font-bold tracking-tight">
-                {selectedEntry ? "✨ แก้ไขบันทึกความทรงจำ" : "✍️ บันทึกเรื่องราวใหม่"}
-              </DialogTitle>
-            </DialogHeader>
-            <DiaryForm
-              key={selectedEntry?.id ?? "new"}
-              onSuccess={handleSuccess}
-              initialData={selectedEntry}
-              token={token}
-              userId={user?.userId}
-              userName={user?.full_name}
-              existingHashtags={existingHashtags}
-            />
-          </div>
-        </DialogContent>
+        <BookDialogContent className="sm:max-w-[960px]">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-2xl font-bold tracking-tight">
+              {selectedEntry ? "✨ แก้ไขบันทึกความทรงจำ" : "✍️ บันทึกเรื่องราวใหม่"}
+            </DialogTitle>
+          </DialogHeader>
+          <DiaryForm
+            key={selectedEntry?.id ?? "new"}
+            onSuccess={handleSuccess}
+            initialData={selectedEntry}
+            token={token}
+            userId={user?.userId}
+            userName={user?.full_name}
+            existingHashtags={existingHashtags}
+          />
+        </BookDialogContent>
       </Dialog>
 
       <AlertDialog 

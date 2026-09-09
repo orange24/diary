@@ -51,3 +51,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 5. Book-opening dialog: the "New/Edit Entry" modal swings open like a
+   book cover instead of the default dialog zoom/fade. Plain CSS classes
+   (not Tailwind's animate-in/zoom-in utilities) so it can't collide with
+   or get partially overridden by the shared DialogContent's own
+   animation classes — this is a deliberately separate component. */
+@keyframes book-open {
+  0% {
+    transform: perspective(1800px) rotateY(-100deg);
+    opacity: 0.4;
+  }
+  100% {
+    transform: perspective(1800px) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes book-close {
+  0% {
+    transform: perspective(1800px) rotateY(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: perspective(1800px) rotateY(-100deg);
+    opacity: 0;
+  }
+}
+
+.book-dialog-content {
+  transform-origin: left center;
+}
+.book-dialog-content[data-state="open"] {
+  animation: book-open 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.book-dialog-content[data-state="closed"] {
+  animation: book-close 0.3s ease-in forwards;
+}
