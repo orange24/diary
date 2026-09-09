@@ -28,6 +28,8 @@ interface ScrapbookEditorProps {
   onHashtagClick?: (tag: string) => void
   // Friends to suggest when typing "@" inside a text box.
   friends?: FriendUser[]
+  // Hashtags already used elsewhere, suggested when typing "#".
+  hashtagSuggestions?: string[]
 }
 
 export function ScrapbookEditor({
@@ -39,6 +41,7 @@ export function ScrapbookEditor({
   onGalleryImageAdded,
   onHashtagClick,
   friends,
+  hashtagSuggestions,
 }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -269,6 +272,7 @@ export function ScrapbookEditor({
                   onFinishEditing={() => setEditingId(null)}
                   onHashtagClick={onHashtagClick}
                   friends={friends}
+                  hashtagSuggestions={hashtagSuggestions}
                 />
               ) : (
                 <ImageElement element={el} />

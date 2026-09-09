@@ -8,6 +8,7 @@ import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
 import { linkifyMentions } from "@/lib/mentions"
 import { FriendUser } from "@/services/friends"
 import { MentionAutocomplete } from "./MentionAutocomplete"
+import { HashtagAutocomplete } from "./HashtagAutocomplete"
 
 const ALLOWED_TAGS = ["b", "i", "em", "strong", "u", "br"]
 const ALLOWED_ATTR: string[] = []
@@ -16,10 +17,23 @@ function sanitize(html: string) {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR })
 }
 
-interface MentionAnchor {
+interface TriggerAnchor {
   node: Text
   start: number
   end: number
+}
+
+// Looks at the text immediately before the caret for an in-progress
+// "<prefix>query" — the prefix at the start of the text node or right after
+// whitespace, with no whitespace between it and the caret.
+function matchTrigger(text: string, caretOffset: number, prefix: "@" | "#") {
+  const before = text.slice(0, caretOffset)
+  const re = prefix === "@" ? /(?:^|\s)@([\p{L}\p{N}_]*)$/u : /(?:^|\s)#([\p{L}\p{N}\p{M}_]*)$/u
+  const match = before.match(re)
+  if (!match) return null
+  const matchStart = before.length - match[0].length
+  const start = match[0].startsWith(prefix) ? matchStart : matchStart + 1
+  return { query: match[1], start, end: caretOffset }
 }
 
 interface TextElementProps {
@@ -33,6 +47,8 @@ interface TextElementProps {
   onHashtagClick?: (tag: string) => void
   // Friends to suggest when typing "@" — only meaningful while editing.
   friends?: FriendUser[]
+  // Hashtags already used elsewhere, suggested when typing "#".
+  hashtagSuggestions?: string[]
 }
 
 export function TextElement({
@@ -43,11 +59,15 @@ export function TextElement({
   onFinishEditing,
   onHashtagClick,
   friends,
+  hashtagSuggestions,
 }: TextElementProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const mentionAnchorRef = useRef<MentionAnchor | null>(null)
+  const mentionAnchorRef = useRef<TriggerAnchor | null>(null)
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
   const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 })
+  const hashtagAnchorRef = useRef<TriggerAnchor | null>(null)
+  const [hashtagQuery, setHashtagQuery] = useState<string | null>(null)
+  const [hashtagPos, setHashtagPos] = useState({ top: 0, left: 0 })
 
   // While editing, the div's content is intentionally uncontrolled (no
   // dangerouslySetInnerHTML below): committing on every keystroke so Save
@@ -60,6 +80,7 @@ export function TextElement({
     ref.current.innerHTML = sanitize(element.text)
     ref.current.focus()
     setMentionQuery(null)
+    setHashtagQuery(null)
     const range = document.createRange()
     range.selectNodeContents(ref.current)
     // Only select-all for the placeholder on a freshly added box, so the first
@@ -77,71 +98,82 @@ export function TextElement({
     onChangeText(sanitize(ref.current.innerHTML))
   }
 
-  // Looks at the text immediately before the caret for an in-progress
-  // "@query" — an "@" at the start of the text node or right after
-  // whitespace, with no whitespace between it and the caret.
-  const detectMention = () => {
-    if (!friends || friends.length === 0 || !ref.current) {
+  const detectTriggers = () => {
+    if (!ref.current) return
+    const clearAll = () => {
       setMentionQuery(null)
-      return
+      setHashtagQuery(null)
     }
+
     const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) {
-      setMentionQuery(null)
-      return
-    }
+    if (!selection || selection.rangeCount === 0) return clearAll()
+
     const range = selection.getRangeAt(0)
-    if (!range.collapsed || !ref.current.contains(range.startContainer)) {
-      setMentionQuery(null)
-      return
-    }
+    if (!range.collapsed || !ref.current.contains(range.startContainer)) return clearAll()
+
     const container = range.startContainer
-    if (container.nodeType !== Node.TEXT_NODE) {
-      setMentionQuery(null)
-      return
-    }
+    if (container.nodeType !== Node.TEXT_NODE) return clearAll()
 
     const text = container.textContent ?? ""
-    const before = text.slice(0, range.startOffset)
-    const match = before.match(/(?:^|\s)@([\p{L}\p{N}_]*)$/u)
-    if (!match) {
+    const rect = range.getBoundingClientRect()
+    const pos = { top: rect.bottom + 4, left: rect.left }
+
+    const mentionMatch = friends && friends.length > 0 ? matchTrigger(text, range.startOffset, "@") : null
+    if (mentionMatch) {
+      mentionAnchorRef.current = { node: container as Text, start: mentionMatch.start, end: mentionMatch.end }
+      setMentionQuery(mentionMatch.query)
+      setMentionPos(pos)
+      setHashtagQuery(null)
+      return
+    }
+
+    const hashtagMatch =
+      hashtagSuggestions && hashtagSuggestions.length > 0 ? matchTrigger(text, range.startOffset, "#") : null
+    if (hashtagMatch) {
+      hashtagAnchorRef.current = { node: container as Text, start: hashtagMatch.start, end: hashtagMatch.end }
+      setHashtagQuery(hashtagMatch.query)
+      setHashtagPos(pos)
       setMentionQuery(null)
       return
     }
 
-    const matchStart = before.length - match[0].length
-    const atIndex = match[0].startsWith("@") ? matchStart : matchStart + 1
-    mentionAnchorRef.current = { node: container as Text, start: atIndex, end: range.startOffset }
-    setMentionQuery(match[1])
-
-    const rect = range.getBoundingClientRect()
-    setMentionPos({ top: rect.bottom + 4, left: rect.left })
+    clearAll()
   }
 
   const handleInput = () => {
     commitText()
-    detectMention()
+    detectTriggers()
   }
 
-  const insertMention = (friend: FriendUser) => {
-    const anchor = mentionAnchorRef.current
-    if (!anchor || !ref.current) return
-
+  const replaceAnchor = (anchor: TriggerAnchor, replacement: string) => {
     const text = anchor.node.textContent ?? ""
     const before = text.slice(0, anchor.start)
     const after = text.slice(anchor.end)
-    const mentionText = `@${friend.username} `
-    anchor.node.textContent = before + mentionText + after
+    anchor.node.textContent = before + replacement + after
 
-    const newOffset = before.length + mentionText.length
+    const newOffset = before.length + replacement.length
     const range = document.createRange()
     range.setStart(anchor.node, newOffset)
     range.collapse(true)
     const selection = window.getSelection()
     selection?.removeAllRanges()
     selection?.addRange(range)
+  }
 
+  const insertMention = (friend: FriendUser) => {
+    const anchor = mentionAnchorRef.current
+    if (!anchor || !ref.current) return
+    replaceAnchor(anchor, `@${friend.username} `)
     setMentionQuery(null)
+    ref.current.focus()
+    commitText()
+  }
+
+  const insertHashtag = (tag: string) => {
+    const anchor = hashtagAnchorRef.current
+    if (!anchor || !ref.current) return
+    replaceAnchor(anchor, `#${tag} `)
+    setHashtagQuery(null)
     ref.current.focus()
     commitText()
   }
@@ -159,10 +191,13 @@ export function TextElement({
         onBlur={() => {
           commitText()
           setMentionQuery(null)
+          setHashtagQuery(null)
           onFinishEditing()
         }}
         onKeyDown={(e) => {
-          if (mentionQuery !== null && e.key === "Escape") setMentionQuery(null)
+          if (e.key !== "Escape") return
+          if (mentionQuery !== null) setMentionQuery(null)
+          if (hashtagQuery !== null) setHashtagQuery(null)
         }}
         onClick={(e) => {
           if (editable || !onHashtagClick) return
@@ -180,19 +215,30 @@ export function TextElement({
           ? {}
           : { dangerouslySetInnerHTML: { __html: linkifyMentions(linkifyHashtags(sanitize(element.text))) } })}
       />
+      {/* Portaled to <body>: the scrapbook canvas scales itself down via a
+          CSS `transform`, and any transformed ancestor becomes the
+          containing block for `position: fixed` descendants — without the
+          portal these popovers would anchor to that scaled box instead of
+          the real viewport, landing far from the caret. */}
       {mentionQuery !== null &&
         friends &&
-        // Portaled to <body>: the scrapbook canvas scales itself down via a
-        // CSS `transform`, and any transformed ancestor becomes the
-        // containing block for `position: fixed` descendants — without the
-        // portal this popover would anchor to that scaled box instead of
-        // the real viewport, landing far from the caret.
         createPortal(
           <MentionAutocomplete
             query={mentionQuery}
             friends={friends}
             position={mentionPos}
             onSelect={insertMention}
+          />,
+          document.body
+        )}
+      {hashtagQuery !== null &&
+        hashtagSuggestions &&
+        createPortal(
+          <HashtagAutocomplete
+            query={hashtagQuery}
+            hashtags={hashtagSuggestions}
+            position={hashtagPos}
+            onSelect={insertHashtag}
           />,
           document.body
         )}

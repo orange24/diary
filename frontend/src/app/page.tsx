@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useInView } from "react-intersection-observer"
 import { DiaryHeader, DiaryView } from "@/components/diary-header"
@@ -10,6 +10,7 @@ import { DiaryGrid } from "@/components/diary-grid"
 import { DiaryForm } from "@/components/diary-form"
 import { HashtagExplorer } from "@/components/hashtag-explorer"
 import { FriendsExplorer } from "@/components/friends-explorer"
+import { extractHashtags } from "@/lib/hashtags"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getEntries, getEntry, deleteEntry, Entry } from "@/services/api"
 import { useAuth } from "@/context/auth-context"
@@ -107,6 +108,16 @@ export default function DiaryDashboard() {
     setSelectedHashtag(tag)
     setActiveView("hashtags")
   }
+
+  // Suggestions for the "#" autocomplete in the entry editor — drawn from
+  // whatever's already loaded, same trade-off as the Hashtag tab's tag cloud.
+  const existingHashtags = useMemo(() => {
+    const tags = new Set<string>()
+    for (const entry of entries) {
+      for (const tag of extractHashtags(entry)) tags.add(tag)
+    }
+    return Array.from(tags)
+  }, [entries])
 
   const handleSuccess = () => {
     setIsModalOpen(false)
@@ -245,6 +256,7 @@ export default function DiaryDashboard() {
               token={token}
               userId={user?.userId}
               userName={user?.full_name}
+              existingHashtags={existingHashtags}
             />
           </div>
         </DialogContent>

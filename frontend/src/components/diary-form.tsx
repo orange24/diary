@@ -16,9 +16,11 @@ interface DiaryFormProps {
   token: string | undefined;
   userId: number | undefined;
   userName?: string;
+  // Hashtags already used elsewhere, suggested when typing "#".
+  existingHashtags?: string[];
 }
 
-export function DiaryForm({ onSuccess, initialData, token, userId, userName }: DiaryFormProps) {
+export function DiaryForm({ onSuccess, initialData, token, userId, userName, existingHashtags }: DiaryFormProps) {
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState(initialData?.title || "")
   // A brand-new entry (no initialData) opens with a text box already primed
@@ -109,6 +111,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName }: D
           token={token}
           onGalleryImageAdded={(url) => setGalleryImages((prev) => [...prev, url])}
           friends={friends}
+          hashtagSuggestions={existingHashtags}
         />
       </div>
 
