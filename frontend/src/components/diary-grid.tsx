@@ -86,13 +86,15 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
   }, [isOpen, nextImage, prevImage, closeLightbox])
 
   return (
-    // A gallery grid, not a single column: cards flow left-to-right then
-    // down, row by row (plain CSS Grid's default auto-flow already reads
-    // this way) — so the newest entry sits top-left and reading order
-    // matches print order, same as a comic-book page. `items-start` keeps
-    // each card at its own natural height instead of being stretched to
-    // match the tallest card in its row.
-    <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-3">
+    // True masonry, not a row-based grid: a CSS multi-column layout packs
+    // each card into whichever column has room next, so a short card is
+    // immediately followed by the next card in that same column instead of
+    // leaving a gap until the next row starts (a CSS Grid's row tracks all
+    // share one height, which is what caused that gap). `break-inside-avoid`
+    // on each card stops it from being split across a column boundary; the
+    // vertical gap between stacked cards comes from each card's own
+    // margin-bottom since column-gap only affects the horizontal gutters.
+    <div className="columns-1 gap-6 sm:columns-2 xl:columns-3">
       {entries.map((entry) => {
         const isScrapbook = !!(entry.layout?.elements && entry.layout.elements.length > 0)
         const hasImages = entry.images && entry.images.length > 0
@@ -104,7 +106,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
         <Card
           key={entry.id}
           id={`entry-${entry.id}`}
-          className={`group relative flex flex-col overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 scroll-mt-24 ${
+          className={`group relative mb-6 flex break-inside-avoid flex-col overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 scroll-mt-24 ${
             isOwn ? "bg-card" : "bg-[#fdf2f8]"
           }`}
         >
