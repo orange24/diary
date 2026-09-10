@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -52,6 +53,9 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
   const [isOpen, setIsOpen] = useState(false)
   const [currentImages, setCurrentImages] = useState<string[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  // Clicking a card's content pops it open here so the (often scaled-down,
+  // masonry-cramped) preview can be read at full size.
+  const [viewingEntry, setViewingEntry] = useState<Entry | null>(null)
 
   const openLightbox = (images: string[], index: number) => {
     setCurrentImages(images)
@@ -177,18 +181,26 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
           </div>
 
-          {isScrapbook ? (
-            <ScrapbookPreview elements={entry.layout!.elements} onHashtagClick={onHashtagClick} />
-          ) : (
-            <div
-              className="prose dark:prose-invert max-w-none p-4 text-muted-foreground"
-              onClick={(e) => {
-                const tag = hashtagFromClick(e)
-                if (tag) onHashtagClick?.(tag)
-              }}
-              dangerouslySetInnerHTML={{ __html: linkifyMentions(linkifyHashtags(getCleanHtml(entry.content))) }}
-            />
-          )}
+          {/* Opens the full-size viewer below. Hashtag clicks (in either
+              branch) stopPropagation once handled, so tapping a tag
+              navigates instead of also popping the viewer open. */}
+          <div className="cursor-pointer" onClick={() => setViewingEntry(entry)}>
+            {isScrapbook ? (
+              <ScrapbookPreview elements={entry.layout!.elements} onHashtagClick={onHashtagClick} />
+            ) : (
+              <div
+                className="prose dark:prose-invert max-w-none p-4 text-muted-foreground"
+                onClick={(e) => {
+                  const tag = hashtagFromClick(e)
+                  if (tag) {
+                    e.stopPropagation()
+                    onHashtagClick?.(tag)
+                  }
+                }}
+                dangerouslySetInnerHTML={{ __html: linkifyMentions(linkifyHashtags(getCleanHtml(entry.content))) }}
+              />
+            )}
+          </div>
 
           {hasImages && (
             <GalleryMosaic
@@ -199,6 +211,65 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
         </Card>
         )
       })}
+
+      {/* --- Full-content viewer --- */}
+      <Dialog open={!!viewingEntry} onOpenChange={(open) => !open && setViewingEntry(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          {viewingEntry && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-10">
+                    {viewingEntry.created_by_avatar && (
+                      <AvatarImage src={viewingEntry.created_by_avatar} alt={viewingEntry.created_by || "Profile"} />
+                    )}
+                    <AvatarFallback>
+                      <User className="size-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col text-left leading-tight">
+                    <DialogTitle className="text-base">{viewingEntry.created_by || "Anonymous"}</DialogTitle>
+                    <span className="text-xs text-muted-foreground">
+                      {viewingEntry.created_date ? new Date(viewingEntry.created_date).toLocaleDateString() : ""}
+                    </span>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {viewingEntry.layout?.elements && viewingEntry.layout.elements.length > 0 ? (
+                <ScrapbookPreview
+                  elements={viewingEntry.layout.elements}
+                  onHashtagClick={(tag) => {
+                    setViewingEntry(null)
+                    onHashtagClick?.(tag)
+                  }}
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert max-w-none text-muted-foreground"
+                  onClick={(e) => {
+                    const tag = hashtagFromClick(e)
+                    if (tag) {
+                      setViewingEntry(null)
+                      onHashtagClick?.(tag)
+                    }
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: linkifyMentions(linkifyHashtags(getCleanHtml(viewingEntry.content))),
+                  }}
+                />
+              )}
+
+              {viewingEntry.images && viewingEntry.images.length > 0 && (
+                <GalleryMosaic
+                  images={viewingEntry.images}
+                  onImageClick={(index) => openLightbox(viewingEntry.images, index)}
+                />
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* --- Lightbox UI --- */}
       {isOpen && (

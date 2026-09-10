@@ -368,7 +368,12 @@ export function TextElement({
         onClick={(e) => {
           if (editable || !onHashtagClick) return
           const tag = hashtagFromClick(e)
-          if (tag) onHashtagClick(tag)
+          // Stop here so a hashtag click doesn't also bubble up into a
+          // card's "open full view" click handler in the read-only feed.
+          if (tag) {
+            e.stopPropagation()
+            onHashtagClick(tag)
+          }
         }}
         className="w-full h-full overflow-hidden outline-none"
         style={{
