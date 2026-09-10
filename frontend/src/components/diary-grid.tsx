@@ -33,6 +33,9 @@ interface DiaryGridProps {
   onEdit?: (id: number) => void
   onDelete?: (id: number) => void
   onHashtagClick?: (tag: string) => void
+  // "grid" (default) packs entries into the responsive masonry columns
+  // below; "single" forces one long column regardless of screen width.
+  layout?: "grid" | "single"
 }
 
 const AUDIENCE_META: Record<EntryAudience, { label: string; icon: typeof Lock }> = {
@@ -83,7 +86,7 @@ function useColumnCount() {
   return columns
 }
 
-export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagClick }: DiaryGridProps) {
+export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagClick, layout = "grid" }: DiaryGridProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentImages, setCurrentImages] = useState<string[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -91,7 +94,10 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
   // masonry-cramped) preview can be read at full size.
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null)
 
-  const columnCount = useColumnCount()
+  const responsiveColumnCount = useColumnCount()
+  // "single" layout always forces one long column, ignoring the screen-width
+  // breakpoints "grid" layout otherwise responds to.
+  const columnCount = layout === "single" ? 1 : responsiveColumnCount
   // Round-robin entries across columns (entry 0 → col 0, entry 1 → col 1,
   // ...) so the newest entries read left-to-right across the top before
   // wrapping down, then each column stacks independently — true masonry

@@ -10,6 +10,8 @@ import { DiaryGrid } from "@/components/diary-grid"
 import { DiaryForm } from "@/components/diary-form"
 import { HashtagExplorer } from "@/components/hashtag-explorer"
 import { FriendsExplorer } from "@/components/friends-explorer"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { LayoutGrid, Rows3 } from "lucide-react"
 import { extractHashtags } from "@/lib/hashtags"
 import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BookDialogContent } from "@/components/book-dialog-content"
@@ -38,6 +40,7 @@ export default function DiaryDashboard() {
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [feedLayout, setFeedLayout] = useState<"grid" | "single">("grid")
   
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -197,6 +200,22 @@ export default function DiaryDashboard() {
                   <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
                 </div>
 
+                <div className="mb-3 flex justify-end">
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={feedLayout}
+                    onValueChange={(value) => value && setFeedLayout(value as "grid" | "single")}
+                  >
+                    <ToggleGroupItem value="grid" aria-label="Masonry layout" title="Masonry layout">
+                      <LayoutGrid className="size-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="single" aria-label="Single column layout" title="Single column layout">
+                      <Rows3 className="size-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+
                 <NewEntryComposer
                   onNewEntry={() => {
                     setSelectedEntry(null);
@@ -211,6 +230,7 @@ export default function DiaryDashboard() {
                   onEdit={handleEdit}
                   onDelete={(id) => setDeleteId(id)}
                   onHashtagClick={openHashtag}
+                  layout={feedLayout}
                 />
 
                 <div ref={ref} className="py-16 text-center flex flex-col items-center justify-center">
