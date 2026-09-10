@@ -116,11 +116,18 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 	}
 	input.Audience = normalizeAudience(input.Audience)
 
-	// เพิ่ม user_id และ layout ลงใน INSERT query
-	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout, audience)
-              VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7) RETURNING id, created_date`
+	// A blank/omitted date falls back to CURRENT_TIMESTAMP; the frontend's
+	// date picker normally always sends one.
+	var createdDateParam interface{}
+	if input.CreatedDate != "" {
+		createdDateParam = input.CreatedDate
+	}
 
-	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam, input.Audience).
+	// เพิ่ม user_id และ layout ลงใน INSERT query
+	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout, audience, created_date)
+              VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, COALESCE($8, CURRENT_TIMESTAMP)) RETURNING id, created_date`
+
+	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam, input.Audience, createdDateParam).
 		Scan(&input.ID, &input.CreatedDate)
 
 	if err != nil {
@@ -167,9 +174,15 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 	}
 	input.Audience = normalizeAudience(input.Audience)
 
-	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb, audience = $6
-			  WHERE id = $7 AND user_id = $8`
-	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, input.Audience, id, userID)
+	// A blank/omitted date leaves the existing created_date untouched.
+	var createdDateParam interface{}
+	if input.CreatedDate != "" {
+		createdDateParam = input.CreatedDate
+	}
+
+	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb, audience = $6, created_date = COALESCE($7, created_date)
+			  WHERE id = $8 AND user_id = $9`
+	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, input.Audience, createdDateParam, id, userID)
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to update entry"})

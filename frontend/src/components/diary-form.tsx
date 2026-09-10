@@ -8,6 +8,7 @@ import { createEntry, updateEntry, Entry, EntryAudience } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
 import { FriendUser, getFriends } from "@/services/friends"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Loader2, Lock, Users, Globe, X } from "lucide-react"
 import { toast } from "sonner"
 
@@ -16,6 +17,14 @@ const AUDIENCE_OPTIONS: { value: EntryAudience; label: string; icon: typeof Lock
   { value: "friend", label: "Friends", icon: Users },
   { value: "public", label: "Public", icon: Globe },
 ]
+
+// Formats a Date as the "YYYY-MM-DD" an <input type="date"> needs, in the
+// browser's local timezone (toISOString() alone would shift by the UTC
+// offset and can land on the wrong calendar day).
+function toDateInputValue(date: Date): string {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+}
 
 interface DiaryFormProps {
   onSuccess: () => void;
@@ -51,6 +60,9 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
   // For the "@" mention autocomplete in the text editor below.
   const [friends, setFriends] = useState<FriendUser[]>([])
   const [audience, setAudience] = useState<EntryAudience>(initialData?.audience ?? "private")
+  const [createdDate, setCreatedDate] = useState<string>(() =>
+    toDateInputValue(initialData?.created_date ? new Date(initialData.created_date) : new Date())
+  )
 
   useEffect(() => {
     if (!token) return
@@ -72,6 +84,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
     )
     setGalleryImages((initialData?.images || []).filter((src) => !canvasSrcs.has(src)))
     setAudience(initialData?.audience ?? "private")
+    setCreatedDate(toDateInputValue(initialData?.created_date ? new Date(initialData.created_date) : new Date()))
   }, [initialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,6 +107,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         created_by: "Watchara",
         layout: { pageWidth: PAGE_WIDTH, elements },
         audience,
+        created_date: createdDate,
       };
 
       if (initialData?.id) {
@@ -112,6 +126,16 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-foreground">Date</label>
+        <Input
+          type="date"
+          value={createdDate}
+          onChange={(e) => setCreatedDate(e.target.value)}
+          className="w-full rounded-xl"
+        />
+      </div>
+
       <div className="space-y-2">
         <label className="text-sm font-semibold text-foreground">Decorate your page</label>
         <ScrapbookEditor
