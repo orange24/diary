@@ -48,11 +48,11 @@ export function Toolbar({
   return (
     <div className="flex flex-wrap items-center gap-2 p-2 mb-3 rounded-xl border border-border bg-muted/50">
       <Button type="button" variant="ghost" size="sm" onClick={onAddText}>
-        <Type className="size-4 mr-1.5" /> ข้อความ
+        <Type className="size-4 mr-1.5" /> Text
       </Button>
 
       <Button type="button" variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
-        <ImagePlus className="size-4 mr-1.5" /> แทรกรูปภาพ
+        <ImagePlus className="size-4 mr-1.5" /> Insert Image
       </Button>
       <input
         ref={fileInputRef}
@@ -71,9 +71,9 @@ export function Toolbar({
         variant="ghost"
         size="sm"
         onClick={() => galleryFileInputRef.current?.click()}
-        title="เพิ่มรูปสำหรับดูเต็มๆ โดยไม่แทรกลงในหน้าบันทึก"
+        title="Add a photo to view in full, without inserting it into the page"
       >
-        <Images className="size-4 mr-1.5" /> เพิ่มรูปแกลเลอรี
+        <Images className="size-4 mr-1.5" /> Add to Gallery
       </Button>
       <input
         ref={galleryFileInputRef}
@@ -90,7 +90,7 @@ export function Toolbar({
       <Popover open={stickerPickerOpen} onOpenChange={setStickerPickerOpen}>
         <PopoverTrigger asChild>
           <Button type="button" variant="ghost" size="sm">
-            <Sticker className="size-4 mr-1.5" /> สติกเกอร์
+            <Sticker className="size-4 mr-1.5" /> Stickers
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto" align="start">
@@ -103,8 +103,8 @@ export function Toolbar({
         </PopoverContent>
       </Popover>
 
-      <Button type="button" variant="ghost" size="sm" onClick={onAddSpace} title="เพิ่มพื้นที่ทำงานด้านล่าง">
-        <ArrowDownToLine className="size-4 mr-1.5" /> เพิ่มพื้นที่
+      <Button type="button" variant="ghost" size="sm" onClick={onAddSpace} title="Add more working space below">
+        <ArrowDownToLine className="size-4 mr-1.5" /> Add Space
       </Button>
       <Button
         type="button"
@@ -112,9 +112,9 @@ export function Toolbar({
         size="sm"
         onClick={onRemoveSpace}
         disabled={!canRemoveSpace}
-        title="ลดพื้นที่ทำงานด้านล่าง"
+        title="Reduce working space below"
       >
-        <ArrowUpToLine className="size-4 mr-1.5" /> ลดพื้นที่
+        <ArrowUpToLine className="size-4 mr-1.5" /> Reduce Space
       </Button>
 
       {selectedElement && (
@@ -128,7 +128,7 @@ export function Toolbar({
                 value={selectedElement.color}
                 onChange={(e) => onUpdateSelected({ color: e.target.value })}
                 className="size-8 rounded cursor-pointer border border-border"
-                title="สีข้อความ"
+                title="Text color"
               />
               <select
                 value={selectedElement.fontFamily}
@@ -148,7 +148,7 @@ export function Toolbar({
                 value={selectedElement.fontSize}
                 onChange={(e) => onUpdateSelected({ fontSize: Number(e.target.value) })}
                 className="h-8 w-16 rounded-md border border-border bg-background px-2 text-sm"
-                title="ขนาดตัวอักษร"
+                title="Font size"
               />
 
               {isEditingSelectedText && (
@@ -163,7 +163,7 @@ export function Toolbar({
                     size="sm"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => document.execCommand("bold")}
-                    title="ตัวหนา"
+                    title="Bold"
                   >
                     <Bold className="size-4" />
                   </Button>
@@ -173,7 +173,7 @@ export function Toolbar({
                     size="sm"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => document.execCommand("italic")}
-                    title="ตัวเอียง"
+                    title="Italic"
                   >
                     <Italic className="size-4" />
                   </Button>
@@ -183,7 +183,7 @@ export function Toolbar({
                     size="sm"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => document.execCommand("underline")}
-                    title="ขีดเส้นใต้"
+                    title="Underline"
                   >
                     <Underline className="size-4" />
                   </Button>
@@ -192,10 +192,10 @@ export function Toolbar({
             </>
           )}
 
-          <Button type="button" variant="ghost" size="sm" onClick={onBringToFront} title="เอาไว้หน้าสุด">
+          <Button type="button" variant="ghost" size="sm" onClick={onBringToFront} title="Bring to front">
             <BringToFront className="size-4" />
           </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onSendToBack} title="เอาไว้หลังสุด">
+          <Button type="button" variant="ghost" size="sm" onClick={onSendToBack} title="Send to back">
             <SendToBack className="size-4" />
           </Button>
           <Button

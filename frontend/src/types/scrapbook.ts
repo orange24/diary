@@ -44,7 +44,7 @@ export const PAGE_WIDTH = 794
 export const PAGE_HEIGHT_MIN = 200
 export const PAGE_HEIGHT_STEP = 300
 export const FONT_OPTIONS = ["Prompt", "Georgia", "Courier New"] as const
-export const NEW_TEXT_PLACEHOLDER = "พิมพ์ข้อความที่นี่..."
+export const NEW_TEXT_PLACEHOLDER = "Type your text here..."
 
 export interface StickerOption {
   id: string

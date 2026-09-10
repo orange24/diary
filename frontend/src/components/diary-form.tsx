@@ -12,9 +12,9 @@ import { Loader2, Lock, Users, Globe, X } from "lucide-react"
 import { toast } from "sonner"
 
 const AUDIENCE_OPTIONS: { value: EntryAudience; label: string; icon: typeof Lock }[] = [
-  { value: "private", label: "เฉพาะฉัน", icon: Lock },
-  { value: "friend", label: "เพื่อน", icon: Users },
-  { value: "public", label: "สาธารณะ", icon: Globe },
+  { value: "private", label: "Only me", icon: Lock },
+  { value: "friend", label: "Friends", icon: Users },
+  { value: "public", label: "Public", icon: Globe },
 ]
 
 interface DiaryFormProps {
@@ -76,7 +76,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!token) return toast.error("กรุณาเข้าสู่ระบบใหม่");
+    if (!token) return toast.error("Please log in again");
 
     setLoading(true)
 
@@ -104,7 +104,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
 
       onSuccess();
     } catch (err: any) {
-      toast.error("บันทึกไม่สำเร็จ", { description: err.message });
+      toast.error("Failed to save", { description: err.message });
     } finally {
       setLoading(false);
     }
@@ -113,7 +113,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pt-4">
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">ตกแต่งหน้าบันทึก</label>
+        <label className="text-sm font-semibold text-foreground">Decorate your page</label>
         <ScrapbookEditor
           elements={elements}
           onChange={setElements}
@@ -128,7 +128,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       {galleryImages.length > 0 && (
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground">
-            รูปแกลเลอรี
+            Gallery
           </label>
           <div className="flex flex-wrap gap-3">
             {galleryImages.map((src, index) => (
@@ -139,7 +139,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
                   type="button"
                   onClick={() => setGalleryImages((prev) => prev.filter((_, i) => i !== index))}
                   className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  title="ลบรูปนี้ออกจากแกลเลอรี"
+                  title="Remove this image from the gallery"
                 >
                   <X className="size-3" />
                 </button>
@@ -150,7 +150,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       )}
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">ใครเห็นโพสต์นี้ได้บ้าง</label>
+        <label className="text-sm font-semibold text-foreground">Who can see this post</label>
         <Select value={audience} onValueChange={(v) => setAudience(v as EntryAudience)}>
           <SelectTrigger className="w-full rounded-xl">
             <SelectValue />
@@ -170,7 +170,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         className="w-full h-12 text-lg font-bold bg-logo text-logo-foreground shadow-lg shadow-logo/20 hover:bg-logo/90"
         disabled={loading}
       >
-        {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> กำลังบันทึก...</> : "MEMORY"}
+        {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving...</> : "MEMORY"}
       </Button>
     </form>
   )

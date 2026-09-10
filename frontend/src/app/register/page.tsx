@@ -34,7 +34,7 @@ export default function RegisterPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
-      toast.error("รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง")
+      toast.error("Passwords don't match. Please check again.")
       return
     }
 
@@ -42,12 +42,12 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, ...submitData } = formData
       await register(submitData) 
-      toast.success("สร้างบัญชีสำเร็จ! กำลังพากลับไปหน้า Login", {
-        description: "คุณสามารถเข้าสู่ระบบด้วยชื่อผู้ใช้ใหม่ได้ทันที",
+      toast.success("Account created successfully! Redirecting you to the login page", {
+        description: "You can log in with your new username right away",
       })
       router.push("/login")
     } catch (err: any) {
-      toast.error("เกิดข้อผิดพลาด", { description: err.message })
+      toast.error("Something went wrong", { description: err.message })
     } finally {
       setLoading(false)
     }

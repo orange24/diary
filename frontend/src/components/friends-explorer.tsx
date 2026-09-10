@@ -150,9 +150,9 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "friends", label: "เพื่อนของฉัน" },
-    { id: "requests", label: requests.length > 0 ? `คำขอเป็นเพื่อน (${requests.length})` : "คำขอเป็นเพื่อน" },
-    { id: "search", label: "ค้นหาเพื่อน" },
+    { id: "friends", label: "My Friends" },
+    { id: "requests", label: requests.length > 0 ? `Friend Requests (${requests.length})` : "Friend Requests" },
+    { id: "search", label: "Find Friends" },
   ]
 
   return (
@@ -176,7 +176,7 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
 
       {tab === "friends" &&
         (friends.length === 0 ? (
-          <p className="text-sm text-muted-foreground">ยังไม่มีเพื่อน ลองไปค้นหาเพื่อนดูสิ</p>
+          <p className="text-sm text-muted-foreground">No friends yet. Try searching for some!</p>
         ) : (
           <ul className="space-y-3">
             {friends.map((f) => (
@@ -191,7 +191,7 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
                     onClick={() => handleRemove(f.friendship_id)}
                     className="text-destructive hover:bg-destructive/10"
                   >
-                    <UserMinus className="size-4" /> ลบเพื่อน
+                    <UserMinus className="size-4" /> Remove Friend
                   </Button>
                 }
               />
@@ -201,7 +201,7 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
 
       {tab === "requests" &&
         (requests.length === 0 ? (
-          <p className="text-sm text-muted-foreground">ไม่มีคำขอเป็นเพื่อนใหม่</p>
+          <p className="text-sm text-muted-foreground">No new friend requests</p>
         ) : (
           <ul className="space-y-3">
             {requests.map((r) => (
@@ -216,10 +216,10 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
                       onClick={() => handleAccept(r.id)}
                       className="bg-logo text-logo-foreground hover:bg-logo/90"
                     >
-                      <Check className="size-4" /> ยอมรับ
+                      <Check className="size-4" /> Accept
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleRemove(r.id)}>
-                      <X className="size-4" /> ปฏิเสธ
+                      <X className="size-4" /> Decline
                     </Button>
                   </div>
                 }
@@ -235,16 +235,16 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="ค้นหาด้วยชื่อผู้ใช้หรือชื่อ..."
+              placeholder="Search by username or name..."
               className="rounded-full pl-10"
               autoFocus
             />
           </div>
 
-          {searching && <p className="text-sm text-muted-foreground">กำลังค้นหา...</p>}
+          {searching && <p className="text-sm text-muted-foreground">Searching...</p>}
 
           {!searching && query.trim() && results.length === 0 && (
-            <p className="text-sm text-muted-foreground">ไม่พบผู้ใช้ที่ตรงกับ &ldquo;{query}&rdquo;</p>
+            <p className="text-sm text-muted-foreground">No users found matching &ldquo;{query}&rdquo;</p>
           )}
 
           {results.length > 0 && (
@@ -256,20 +256,20 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
                   username={r.username}
                   action={
                     r.relationship === "friends" ? (
-                      <span className="text-sm font-medium text-muted-foreground">เพื่อนกันแล้ว</span>
+                      <span className="text-sm font-medium text-muted-foreground">Already friends</span>
                     ) : r.relationship === "outgoing" ? (
-                      <span className="text-sm font-medium text-muted-foreground">ส่งคำขอแล้ว</span>
+                      <span className="text-sm font-medium text-muted-foreground">Request sent</span>
                     ) : r.relationship === "incoming" ? (
                       <Button
                         size="sm"
                         onClick={() => r.friendship_id && handleAccept(r.friendship_id)}
                         className="bg-logo text-logo-foreground hover:bg-logo/90"
                       >
-                        <Check className="size-4" /> ยอมรับคำขอ
+                        <Check className="size-4" /> Accept Request
                       </Button>
                     ) : (
                       <Button variant="outline" size="sm" onClick={() => handleSendRequest(r.id)}>
-                        <UserPlus className="size-4" /> เพิ่มเพื่อน
+                        <UserPlus className="size-4" /> Add Friend
                       </Button>
                     )
                   }

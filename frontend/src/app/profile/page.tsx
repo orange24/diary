@@ -50,7 +50,7 @@ export default function ProfilePage() {
           x_link: data.x_link,
         })
       })
-      .catch((err: any) => toast.error("โหลดโปรไฟล์ไม่สำเร็จ", { description: err.message }))
+      .catch((err: any) => toast.error("Failed to load profile", { description: err.message }))
       .finally(() => setLoadingProfile(false))
   }, [token])
 
@@ -65,10 +65,10 @@ export default function ProfilePage() {
     try {
       await updateProfile(form, token)
       updateUser({ full_name: form.full_name })
-      toast.success("บันทึกโปรไฟล์แล้ว")
+      toast.success("Profile saved")
       router.push("/")
     } catch (err: any) {
-      toast.error("บันทึกไม่สำเร็จ", { description: err.message })
+      toast.error("Save failed", { description: err.message })
     } finally {
       setSaving(false)
     }
@@ -95,7 +95,7 @@ export default function ProfilePage() {
           >
             <ArrowLeft className="size-5" />
           </Button>
-          <h1 className="text-lg font-bold tracking-tight text-white">แก้ไขโปรไฟล์</h1>
+          <h1 className="text-lg font-bold tracking-tight text-white">Edit Profile</h1>
         </div>
       </header>
 
@@ -108,11 +108,11 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">ชื่อเต็ม</label>
+              <label className="text-sm font-semibold text-foreground">Full name</label>
               <Input name="full_name" value={form.full_name} onChange={handleChange} className="rounded-xl" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">วันเกิด</label>
+              <label className="text-sm font-semibold text-foreground">Date of birth</label>
               <Input
                 name="birthdate"
                 type="date"
@@ -125,29 +125,29 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">เพศ</label>
+              <label className="text-sm font-semibold text-foreground">Gender</label>
               <Select
                 value={form.gender || undefined}
                 onValueChange={(v) => setForm((prev) => ({ ...prev, gender: v }))}
               >
                 <SelectTrigger className="w-full rounded-xl">
-                  <SelectValue placeholder="เลือก" />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">ชาย</SelectItem>
-                  <SelectItem value="female">หญิง</SelectItem>
-                  <SelectItem value="other">อื่นๆ</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">ประเทศ</label>
+              <label className="text-sm font-semibold text-foreground">Country</label>
               <Input name="country" value={form.country} onChange={handleChange} className="rounded-xl" />
             </div>
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-foreground">โซเชียลมีเดีย</label>
+            <label className="text-sm font-semibold text-foreground">Social media</label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input
                 name="facebook_link"
@@ -187,10 +187,10 @@ export default function ProfilePage() {
           >
             {saving ? (
               <>
-                <Loader2 className="mr-2 size-4 animate-spin" /> กำลังบันทึก...
+                <Loader2 className="mr-2 size-4 animate-spin" /> Saving...
               </>
             ) : (
-              "บันทึกการเปลี่ยนแปลง"
+              "Save changes"
             )}
           </Button>
         </form>

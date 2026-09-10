@@ -136,7 +136,7 @@ export default function DiaryDashboard() {
       setEntries((prev) => prev.filter((e) => e.id !== deleteId));
       setDeleteId(null); 
     } catch (error) {
-      alert("ลบไม่สำเร็จ");
+      alert("Delete failed");
     } finally {
       setIsDeleting(false);
     }
@@ -149,7 +149,7 @@ export default function DiaryDashboard() {
       setSelectedEntry(entry)
       setIsModalOpen(true)
     } catch (error) {
-      alert("ไม่สามารถดึงข้อมูลเพื่อแก้ไขได้")
+      alert("Couldn't load the entry for editing.")
     }
   }
 
@@ -244,7 +244,7 @@ export default function DiaryDashboard() {
         <BookDialogContent className="sm:max-w-[960px]">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-2xl font-bold tracking-tight">
-              {selectedEntry ? "✨ แก้ไขบันทึกความทรงจำ" : "บันทึกเรื่องราวใหม่"}
+              {selectedEntry ? "✨ Edit memory" : "New entry"}
             </DialogTitle>
           </DialogHeader>
           <DiaryForm
@@ -265,21 +265,21 @@ export default function DiaryDashboard() {
       >
         <AlertDialogContent className="rounded-3xl border-primary/10 p-8">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold text-foreground">ยืนยันการลบข้อมูล?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-bold text-foreground">Delete this entry?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground text-base">
-              บันทึกนี้จะหายไปจากไทม์ไลน์ของคุณอย่างถาวร คุณแน่ใจใช่ไหมว่าจะลบเรื่องราวนี้?
+              This entry will be permanently removed from your timeline. Are you sure you want to delete it?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-3 mt-6">
             <AlertDialogCancel className="rounded-2xl border-none bg-muted hover:bg-muted/70 text-muted-foreground px-6 h-12">
-              ไม่ใช่, ฉันเปลี่ยนใจ
+              No, I changed my mind
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isDeleting}
               className="rounded-2xl bg-destructive hover:bg-destructive/90 text-destructive-foreground px-6 h-12 shadow-lg shadow-destructive/20"
             >
-              {isDeleting ? "กำลังลบ..." : "ใช่, ลบเลย"}
+              {isDeleting ? "Deleting..." : "Yes, delete it"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

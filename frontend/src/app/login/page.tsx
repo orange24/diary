@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/form"
 
 const loginSchema = z.object({
-  username: z.string().min(1, { message: "✕ กรุณาระบุชื่อผู้ใช้" }),
-  password: z.string().min(1, { message: "✕ กรุณาระบุรหัสผ่าน" }),
+  username: z.string().min(1, { message: "✕ Please enter your username" }),
+  password: z.string().min(1, { message: "✕ Please enter your password" }),
 })
 
 export default function LoginPage() {
@@ -87,7 +87,7 @@ export default function LoginPage() {
           <CardTitle className="text-3xl font-bold text-center text-neutral-900 tracking-tight">
             <span className="uppercase text-logo">Papymory</span> Login
           </CardTitle>
-          <p className="text-center text-neutral-500 text-sm mt-2">เข้าสู่ระบบเพื่อบันทึกเรื่องราวของคุณ</p>
+          <p className="text-center text-neutral-500 text-sm mt-2">Log in to save your story</p>
         </CardHeader>
         <CardContent className="p-8">
           <Form {...form}>

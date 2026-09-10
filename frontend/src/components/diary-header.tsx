@@ -105,7 +105,7 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer font-medium">
                 <UserCog className="mr-2 size-4" />
-                <span>แก้ไขโปรไฟล์</span>
+                <span>Edit Profile</span>
               </DropdownMenuItem>
               <DropdownMenuCheckboxItem
                 checked={isDark}
@@ -113,7 +113,7 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
                 className="cursor-pointer font-medium"
               >
                 <Moon className="mr-2 size-4" />
-                <span>โหมดมืด</span>
+                <span>Dark Mode</span>
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

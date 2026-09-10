@@ -31,9 +31,9 @@ interface DiaryGridProps {
 }
 
 const AUDIENCE_META: Record<EntryAudience, { label: string; icon: typeof Lock }> = {
-  private: { label: "เฉพาะฉัน", icon: Lock },
-  friend: { label: "เพื่อน", icon: Users },
-  public: { label: "สาธารณะ", icon: Globe },
+  private: { label: "Only me", icon: Lock },
+  friend: { label: "Friends", icon: Users },
+  public: { label: "Public", icon: Globe },
 }
 
 // ✅ 2. สร้าง Helper Function สำหรับกรอง HTML (วางไว้นอก Component)
@@ -135,15 +135,15 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
                     <DropdownMenuItem
                       disabled={!entry.layout}
                       onClick={() => entry.layout && onEdit?.(entry.id)}
-                      title={!entry.layout ? "บันทึกเก่า ไม่รองรับการแก้ไข — กรุณาลบแล้วสร้างใหม่" : undefined}
+                      title={!entry.layout ? "This is an old entry and can't be edited — please delete it and create a new one" : undefined}
                     >
-                      <Pencil className="size-4" /> แก้ไข
+                      <Pencil className="size-4" /> Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       variant="destructive"
                       onClick={() => onDelete?.(entry.id)}
                     >
-                      <Trash2 className="size-4" /> ลบ
+                      <Trash2 className="size-4" /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

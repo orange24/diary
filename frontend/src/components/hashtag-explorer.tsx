@@ -56,7 +56,7 @@ export function HashtagExplorer({
           onClick={() => onSelectTag(null)}
           className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-logo"
         >
-          <ArrowLeft className="size-4" /> แฮชแท็กทั้งหมด
+          <ArrowLeft className="size-4" /> All Hashtags
         </button>
 
         <div className="mb-8 flex items-center gap-2">
@@ -66,7 +66,7 @@ export function HashtagExplorer({
         </div>
 
         {taggedEntries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">ไม่พบบันทึกที่ติดแฮชแท็กนี้</p>
+          <p className="text-sm text-muted-foreground">No entries found with this hashtag</p>
         ) : (
           <DiaryGrid
             entries={taggedEntries}
@@ -83,15 +83,15 @@ export function HashtagExplorer({
   return (
     <div>
       <div className="mb-8 space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">แฮชแท็กทั้งหมด</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">All Hashtags</h2>
         <p className="text-sm text-muted-foreground">
-          พิมพ์ # ตามด้วยชื่อหมวดในบันทึก แล้วเลือกดูตามแฮชแท็กได้ที่นี่
+          Type # followed by a category name in your entries, then browse by hashtag here.
         </p>
       </div>
 
       {tagCounts.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {isLoadingAll ? "กำลังโหลดบันทึกทั้งหมด..." : "ยังไม่มีแฮชแท็กในบันทึกของคุณ"}
+          {isLoadingAll ? "Loading all entries..." : "You don't have any hashtags in your entries yet"}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -111,7 +111,7 @@ export function HashtagExplorer({
       )}
 
       {isLoadingAll && tagCounts.length > 0 && (
-        <p className="mt-6 text-xs text-muted-foreground">กำลังโหลดบันทึกเก่าเพิ่มเติม...</p>
+        <p className="mt-6 text-xs text-muted-foreground">Loading more older entries...</p>
       )}
     </div>
   )

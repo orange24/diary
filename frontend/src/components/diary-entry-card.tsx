@@ -85,7 +85,7 @@ export function DiaryEntryCard({ entry, onEdit, onDelete }: DiaryEntryCardProps)
             />
             {entry.images.length > 1 && (
               <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-md font-medium">
-                +{entry.images.length - 1} รูปภาพ
+                +{entry.images.length - 1} photos
               </span>
             )}
           </div>
@@ -99,7 +99,7 @@ export function DiaryEntryCard({ entry, onEdit, onDelete }: DiaryEntryCardProps)
           onClick={() => onEdit?.(entry.id)}
           className="h-8 px-3 text-xs"
         >
-          <Pencil className="size-3.5 mr-1" /> แก้ไข
+          <Pencil className="size-3.5 mr-1" /> Edit
         </Button>
         <Button
           variant="ghost"
@@ -107,7 +107,7 @@ export function DiaryEntryCard({ entry, onEdit, onDelete }: DiaryEntryCardProps)
           onClick={() => onDelete?.(entry.id)}
           className="h-8 px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
         >
-          <Trash2 className="size-3.5 mr-1" /> ลบ
+          <Trash2 className="size-3.5 mr-1" /> Delete
         </Button>
       </CardFooter>
     </Card>
