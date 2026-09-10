@@ -215,7 +215,13 @@ export function ScrapbookEditor({
       )}
 
       <div
-        className="relative bg-white mx-auto overflow-hidden rounded-md border border-border shadow-[0_12px_32px_-6px_var(--canvas-frame-shadow)]"
+        // The "page" chrome (rounded corners/border/shadow) only makes sense
+        // while editing — read-only (feed cards, the content viewer) sits
+        // flush inside a container that already provides its own chrome, so
+        // this would just add an unwanted rounded seam at the canvas edge.
+        className={`relative bg-white mx-auto overflow-hidden ${
+          editable ? "rounded-md border border-border shadow-[0_12px_32px_-6px_var(--canvas-frame-shadow)]" : ""
+        }`}
         style={{
           width: PAGE_WIDTH * scale,
           height: canvasHeight * scale,
