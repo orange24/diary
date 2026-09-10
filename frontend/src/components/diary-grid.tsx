@@ -170,7 +170,10 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             )}
           </div>
 
-          <div className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white">
+          {/* Shifted left of right-2 so it clears the 3-dot menu button
+              (size-8, sitting in the overlay's own right-aligned p-3
+              padding) instead of overlapping it on hover. */}
+          <div className="pointer-events-none absolute right-14 top-2 z-20 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white">
             {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
           </div>
 
