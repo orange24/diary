@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useInView } from "react-intersection-observer"
 import { DiaryHeader, DiaryView } from "@/components/diary-header"
@@ -47,6 +47,31 @@ export default function DiaryDashboard() {
   // have a layout toggle.
   const showRightLane = activeView === "home" && feedLayout === "single"
   const showRightBar = activeView === "home" && feedLayout === "grid"
+
+  // The timeline sidebar's top should line up with where the actual content
+  // (composer + feed) starts, not with the "Welcome back" greeting/toggle
+  // row above it — measured live since the greeting's height varies with
+  // the user's name and viewport width.
+  const gridTopRef = useRef<HTMLDivElement>(null)
+  const contentStartRef = useRef<HTMLDivElement>(null)
+  const [timelineTopOffset, setTimelineTopOffset] = useState(0)
+
+  useEffect(() => {
+    const gridEl = gridTopRef.current
+    const contentEl = contentStartRef.current
+    if (!gridEl || !contentEl) {
+      setTimelineTopOffset(0)
+      return
+    }
+    const measure = () => {
+      setTimelineTopOffset(contentEl.getBoundingClientRect().top - gridEl.getBoundingClientRect().top)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(gridEl)
+    observer.observe(contentEl)
+    return () => observer.disconnect()
+  }, [activeView, feedLayout, user?.full_name])
   
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -185,12 +210,13 @@ export default function DiaryDashboard() {
         className={`mx-auto w-full max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8 ${showRightBar ? "lg:pr-20" : ""}`}
       >
         <div
+          ref={gridTopRef}
           className={`grid grid-cols-1 gap-8 ${
             showRightLane ? "lg:grid-cols-[200px_minmax(0,1fr)_280px]" : "lg:grid-cols-[200px_minmax(0,1fr)]"
           }`}
         >
           {/* Left: year/month timeline */}
-          <DiaryTimelineSidebar entries={entries} />
+          <DiaryTimelineSidebar entries={entries} topOffset={timelineTopOffset} />
 
           {/* Center: the feed, or the hashtag browser */}
           <div className="min-w-0">
@@ -232,6 +258,7 @@ export default function DiaryDashboard() {
                   </ToggleGroup>
                 </div>
 
+                <div ref={contentStartRef} />
                 <NewEntryComposer
                   onNewEntry={() => {
                     setSelectedEntry(null);
