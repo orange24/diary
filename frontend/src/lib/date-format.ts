@@ -10,8 +10,8 @@ export const monthKey = (dateStr?: string) => {
 }
 
 // Feed-card date label: relative wording for anything posted today ("Just
-// now", "5 minutes ago", "3 hours ago"), a plain "10 September 2026"
-// otherwise.
+// now", "5 minutes ago", "3 hours ago"), "Yesterday" / "N days ago" for the
+// past week, a plain "10 September 2026" beyond that.
 export const formatEntryDate = (dateStr?: string) => {
   if (!dateStr) return ""
   const date = new Date(dateStr)
@@ -25,6 +25,15 @@ export const formatEntryDate = (dateStr?: string) => {
     const diffHours = Math.floor(diffMinutes / 60)
     return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`
   }
+
+  // Calendar-day diff (not raw ms/24h) so e.g. 11pm-yesterday vs 1am-today
+  // still count as adjacent calendar days.
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((startOfToday.getTime() - startOfDate.getTime()) / 86400000)
+
+  if (diffDays === 1) return "Yesterday"
+  if (diffDays >= 2 && diffDays <= 7) return `${diffDays} days ago`
 
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
 }
