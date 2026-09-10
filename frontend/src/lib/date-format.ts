@@ -9,9 +9,13 @@ export const monthKey = (dateStr?: string) => {
   return `${d.getFullYear()}-${d.getMonth()}`
 }
 
+const formatTime = (date: Date) =>
+  date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })
+
 // Feed-card date label: relative wording for anything posted today ("Just
-// now", "5 minutes ago", "3 hours ago"), "Yesterday" / "N days ago" for the
-// past week, a plain "10 September 2026" beyond that.
+// now", "5 minutes ago", "3 hours ago" — already time-relative, so no clock
+// time appended), "Yesterday" / "N days ago" for the past week and the plain
+// "10 September 2026" beyond that both get the clock time appended too.
 export const formatEntryDate = (dateStr?: string) => {
   if (!dateStr) return ""
   const date = new Date(dateStr)
@@ -32,8 +36,9 @@ export const formatEntryDate = (dateStr?: string) => {
   const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   const diffDays = Math.round((startOfToday.getTime() - startOfDate.getTime()) / 86400000)
 
-  if (diffDays === 1) return "Yesterday"
-  if (diffDays >= 2 && diffDays <= 7) return `${diffDays} days ago`
+  if (diffDays === 1) return `Yesterday, ${formatTime(date)}`
+  if (diffDays >= 2 && diffDays <= 7) return `${diffDays} days ago, ${formatTime(date)}`
 
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+  const absoluteDate = date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+  return `${absoluteDate}, ${formatTime(date)}`
 }
