@@ -99,6 +99,24 @@ export const STICKER_PACKS: StickerPack[] = [
       { id: "ocean-pal", label: "Ocean Pal", src: "/stickers/pack2/ocean-pal.png", aspect: 381 / 400 },
     ],
   },
+  {
+    id: "weather",
+    name: "Weather",
+    stickers: [
+      { id: "sunny-smile", label: "Sunny Smile", src: "/stickers/pack3/sunny-smile.png", aspect: 361 / 400 },
+      { id: "extreme-heat", label: "Extreme Heat", src: "/stickers/pack3/extreme-heat.png", aspect: 400 / 400 },
+      { id: "evening-sun", label: "Evening Sun", src: "/stickers/pack3/evening-sun.png", aspect: 400 / 391 },
+      { id: "heavy-overcast", label: "Heavy Overcast", src: "/stickers/pack3/heavy-overcast.png", aspect: 400 / 353 },
+      { id: "light-drizzle", label: "Light Drizzle", src: "/stickers/pack3/light-drizzle.png", aspect: 397 / 400 },
+      { id: "heavy-rain", label: "Heavy Rain", src: "/stickers/pack3/heavy-rain.png", aspect: 369 / 400 },
+      { id: "storm-incoming", label: "Storm Incoming", src: "/stickers/pack3/storm-incoming.png", aspect: 400 / 332 },
+      { id: "strong-wind", label: "Strong Wind", src: "/stickers/pack3/strong-wind.png", aspect: 389 / 400 },
+      { id: "blooming-fun", label: "Blooming Fun", src: "/stickers/pack3/blooming-fun.png", aspect: 400 / 375 },
+      { id: "cool-breeze", label: "Cool Breeze", src: "/stickers/pack3/cool-breeze.png", aspect: 400 / 373 },
+      { id: "very-cold", label: "Very Cold", src: "/stickers/pack3/very-cold.png", aspect: 336 / 400 },
+      { id: "falling-snow", label: "Falling Snow", src: "/stickers/pack3/falling-snow.png", aspect: 400 / 373 },
+    ],
+  },
 ]
 
 export function newElementId(): string {
