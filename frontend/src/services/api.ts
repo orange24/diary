@@ -5,8 +5,9 @@ import { ScrapbookLayout } from "@/types/scrapbook";
 // ✅ แก้ไขพอร์ตให้ตรงกับ Docker (9090)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090";
 
-// Who can see an entry. Storage/UI only for now — no feed anywhere queries
-// another user's entries yet, so this doesn't gate visibility.
+// Who can see an entry — "friend"/"public" entries from a friend who tags
+// this user get merged into their feed (see getEntries), "private" never
+// leaves the owner's own feed.
 export type EntryAudience = "private" | "friend" | "public";
 
 export interface Entry {
@@ -18,6 +19,9 @@ export interface Entry {
   images: string[];
   layout?: ScrapbookLayout | null;
   audience: EntryAudience;
+  // The entry's owner — lets the UI tell its own entries apart from a
+  // friend's entry merged into the same feed.
+  user_id: number;
 }
 
 // 1. ดึงรายการบันทึก (แบบปลอดภัย)

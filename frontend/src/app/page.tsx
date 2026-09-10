@@ -185,6 +185,7 @@ export default function DiaryDashboard() {
                 onSelectTag={setSelectedHashtag}
                 onEdit={handleEdit}
                 onDelete={(id) => setDeleteId(id)}
+                currentUserId={user?.userId}
               />
             ) : activeView === "friends" ? (
               <FriendsExplorer token={token} />
@@ -204,6 +205,7 @@ export default function DiaryDashboard() {
 
                 <DiaryGrid
                   entries={entries}
+                  currentUserId={user?.userId}
                   onEdit={handleEdit}
                   onDelete={(id) => setDeleteId(id)}
                   onHashtagClick={openHashtag}

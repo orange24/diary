@@ -21,6 +21,10 @@ import { linkifyMentions } from "@/lib/mentions"
 
 interface DiaryGridProps {
   entries: Entry[]
+  // Needed to tell a friend's entry (merged into this same feed because it
+  // tags this user) apart from the viewer's own — see the pink card
+  // styling and the edit/delete menu below.
+  currentUserId?: number
   onEdit?: (id: number) => void
   onDelete?: (id: number) => void
   onHashtagClick?: (tag: string) => void
@@ -43,7 +47,7 @@ const getCleanHtml = (html: string) => {
   });
 };
 
-export function DiaryGrid({ entries, onEdit, onDelete, onHashtagClick }: DiaryGridProps) {
+export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagClick }: DiaryGridProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentImages, setCurrentImages] = useState<string[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -86,12 +90,17 @@ export function DiaryGrid({ entries, onEdit, onDelete, onHashtagClick }: DiaryGr
       {entries.map((entry) => {
         const isScrapbook = !!(entry.layout?.elements && entry.layout.elements.length > 0)
         const hasImages = entry.images && entry.images.length > 0
+        // A friend's entry merged into this feed (because it tags this
+        // user) — never own unless currentUserId isn't known yet.
+        const isOwn = currentUserId === undefined || entry.user_id === currentUserId
 
         return (
         <Card
           key={entry.id}
           id={`entry-${entry.id}`}
-          className="group relative flex flex-col bg-card overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 scroll-mt-24"
+          className={`group relative flex flex-col overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 scroll-mt-24 ${
+            isOwn ? "bg-card" : "bg-[#fdf2f8]"
+          }`}
         >
           <CardHeader className="pb-2">
             <CardTitle className="text-xl font-bold text-card-foreground">{entry.title}</CardTitle>
@@ -110,34 +119,36 @@ export function DiaryGrid({ entries, onEdit, onDelete, onHashtagClick }: DiaryGr
               </div>
             </div>
 
-            <CardAction>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    disabled={!entry.layout}
-                    onClick={() => entry.layout && onEdit?.(entry.id)}
-                    title={!entry.layout ? "บันทึกเก่า ไม่รองรับการแก้ไข — กรุณาลบแล้วสร้างใหม่" : undefined}
-                  >
-                    <Pencil className="size-4" /> แก้ไข
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => onDelete?.(entry.id)}
-                  >
-                    <Trash2 className="size-4" /> ลบ
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardAction>
+            {isOwn && (
+              <CardAction>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <MoreVertical className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      disabled={!entry.layout}
+                      onClick={() => entry.layout && onEdit?.(entry.id)}
+                      title={!entry.layout ? "บันทึกเก่า ไม่รองรับการแก้ไข — กรุณาลบแล้วสร้างใหม่" : undefined}
+                    >
+                      <Pencil className="size-4" /> แก้ไข
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => onDelete?.(entry.id)}
+                    >
+                      <Trash2 className="size-4" /> ลบ
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardAction>
+            )}
           </CardHeader>
 
           <CardContent className="space-y-4">

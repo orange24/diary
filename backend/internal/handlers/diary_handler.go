@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 
 	"github.com/cloudinary/cloudinary-go/v2"
@@ -30,7 +31,7 @@ func normalizeAudience(audience string) string {
 	}
 }
 
-// 1. GetEntries: ดึงเฉพาะของตัวเอง
+// 1. GetEntries: ของตัวเอง + ของเพื่อนที่ tag เราไว้และเปิดเป็น public/friend
 func (h *EntryHandler) GetEntries(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
@@ -39,13 +40,43 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	// ดึง userID จาก Middleware (ที่เก็บไว้ใน Context ของ Gin)
 	userID := c.MustGet("user_id")
 
-	// เพิ่มเงื่อนไข WHERE user_id = $3
-	query := `SELECT id, title, content, created_date, COALESCE(created_by, ''), images, layout, audience
-			  FROM entries
-			  WHERE user_id = $3
-			  ORDER BY id DESC LIMIT $1 OFFSET $2`
+	// A mention is stored as literal "@username" text inside the scrapbook
+	// layout — build a word-bounded regex for it once so a friend's post
+	// only surfaces here when it actually tags this user, not merely
+	// contains their username as a substring of something else.
+	var username string
+	_ = h.DB.QueryRow("SELECT username FROM users WHERE id = $1", userID).Scan(&username)
 
-	rows, err := h.DB.Query(query, limit, offset, userID)
+	// Own entries always show. A friend's entry also shows once it (a) is
+	// marked public or friend-visible, (b) tags this user by @username, and
+	// (c) the poster is an accepted friend — so being tagged in someone
+	// else's public post doesn't require friendship, but "friend"-audience
+	// posts still stay within the friend circle. Skipped entirely if the
+	// username lookup failed, rather than risk a pattern that accidentally
+	// matches everything.
+	mergeFriendsClause := ""
+	args := []interface{}{userID, limit, offset}
+	if username != "" {
+		mergeFriendsClause = `
+			     OR (
+			       e.audience IN ('public', 'friend')
+			       AND e.layout::text ~ $4
+			       AND EXISTS (
+			         SELECT 1 FROM friendships f
+			         WHERE f.status = 'accepted'
+			           AND ((f.requester_id = $1 AND f.addressee_id = e.user_id)
+			             OR (f.addressee_id = $1 AND f.requester_id = e.user_id))
+			       )
+			     )`
+		args = append(args, "@"+regexp.QuoteMeta(username)+`\y`)
+	}
+
+	query := `SELECT e.id, e.title, e.content, e.created_date, COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id
+			  FROM entries e
+			  WHERE e.user_id = $1` + mergeFriendsClause + `
+			  ORDER BY e.id DESC LIMIT $2 OFFSET $3`
+
+	rows, err := h.DB.Query(query, args...)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -56,7 +87,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	for rows.Next() {
 		var e models.Entry
 		var layoutStr sql.NullString
-		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience)
+		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Scan error: " + err.Error()})
 			return

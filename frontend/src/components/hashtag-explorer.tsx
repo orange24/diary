@@ -15,6 +15,7 @@ interface HashtagExplorerProps {
   onSelectTag: (tag: string | null) => void
   onEdit?: (id: number) => void
   onDelete?: (id: number) => void
+  currentUserId?: number
 }
 
 // Browsing surface for the "Hashtag" tab: a cloud of every #tag found across
@@ -28,6 +29,7 @@ export function HashtagExplorer({
   onSelectTag,
   onEdit,
   onDelete,
+  currentUserId,
 }: HashtagExplorerProps) {
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>()
@@ -68,6 +70,7 @@ export function HashtagExplorer({
         ) : (
           <DiaryGrid
             entries={taggedEntries}
+            currentUserId={currentUserId}
             onEdit={onEdit}
             onDelete={onDelete}
             onHashtagClick={onSelectTag}
