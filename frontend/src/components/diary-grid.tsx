@@ -21,6 +21,7 @@ import { isVideo, getDisplayMedia } from "@/lib/media-utils"
 import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
 import { linkifyMentions } from "@/lib/mentions"
 import { ScrapElement } from "@/types/scrapbook"
+import { formatEntryDate } from "@/lib/date-format"
 
 interface DiaryGridProps {
   entries: Entry[]
@@ -136,7 +137,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               of the card's way by default so it reads as pure content,
               surfacing on the right only on hover. */}
           <div className="mb-1.5 text-[14px] text-[#9b9b9b]">
-            {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
+            {formatEntryDate(entry.created_date)}
           </div>
 
           <Card
@@ -276,7 +277,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
                   <div className="flex flex-col text-left leading-tight">
                     <DialogTitle className="text-base">{viewingEntry.created_by || "Anonymous"}</DialogTitle>
                     <span className="text-xs text-muted-foreground">
-                      {viewingEntry.created_date ? new Date(viewingEntry.created_date).toLocaleDateString() : ""}
+                      {formatEntryDate(viewingEntry.created_date)}
                     </span>
                   </div>
                 </div>
