@@ -5,6 +5,10 @@ import { ScrapbookLayout } from "@/types/scrapbook";
 // ✅ แก้ไขพอร์ตให้ตรงกับ Docker (9090)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090";
 
+// Who can see an entry. Storage/UI only for now — no feed anywhere queries
+// another user's entries yet, so this doesn't gate visibility.
+export type EntryAudience = "private" | "friend" | "public";
+
 export interface Entry {
   id: number;
   title: string;
@@ -13,6 +17,7 @@ export interface Entry {
   created_by: string;
   images: string[];
   layout?: ScrapbookLayout | null;
+  audience: EntryAudience;
 }
 
 // 1. ดึงรายการบันทึก (แบบปลอดภัย)

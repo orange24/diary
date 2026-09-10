@@ -14,4 +14,8 @@ type Entry struct {
 	CreatedBy   string          `json:"created_by"`
 	Images      pq.StringArray  `json:"images"`
 	Layout      json.RawMessage `json:"layout,omitempty"`
+	// Who can see this entry — "private" | "friend" | "public". Storage
+	// only for now: no query anywhere yet fetches another user's entries,
+	// so this doesn't gate visibility until a friends/public feed exists.
+	Audience string `json:"audience"`
 }

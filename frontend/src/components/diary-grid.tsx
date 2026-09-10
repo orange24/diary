@@ -9,8 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react"
-import { Entry } from "@/services/api"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, Lock, Users, Globe } from "lucide-react"
+import { Entry, EntryAudience } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
 import { ScrapbookPreview } from "@/components/scrapbook/ScrapbookPreview"
@@ -24,6 +24,12 @@ interface DiaryGridProps {
   onEdit?: (id: number) => void
   onDelete?: (id: number) => void
   onHashtagClick?: (tag: string) => void
+}
+
+const AUDIENCE_META: Record<EntryAudience, { label: string; icon: typeof Lock }> = {
+  private: { label: "เฉพาะฉัน", icon: Lock },
+  friend: { label: "เพื่อน", icon: Users },
+  public: { label: "สาธารณะ", icon: Globe },
 }
 
 // ✅ 2. สร้าง Helper Function สำหรับกรอง HTML (วางไว้นอก Component)
@@ -91,7 +97,17 @@ export function DiaryGrid({ entries, onEdit, onDelete, onHashtagClick }: DiaryGr
             <CardTitle className="text-xl font-bold text-card-foreground">{entry.title}</CardTitle>
             <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
               <span>By {entry.created_by || 'Anonymous'}</span>
-              <span>{entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}</span>
+              <div className="flex items-center gap-3">
+                {entry.audience && (() => {
+                  const { label, icon: Icon } = AUDIENCE_META[entry.audience]
+                  return (
+                    <span className="flex items-center gap-1" title={label}>
+                      <Icon className="size-3" /> {label}
+                    </span>
+                  )
+                })()}
+                <span>{entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}</span>
+              </div>
             </div>
 
             <CardAction>

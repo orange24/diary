@@ -4,11 +4,18 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
 import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextElement } from "@/types/scrapbook"
-import { createEntry, updateEntry, Entry } from "@/services/api"
+import { createEntry, updateEntry, Entry, EntryAudience } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
 import { FriendUser, getFriends } from "@/services/friends"
-import { Loader2, X } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Loader2, Lock, Users, Globe, X } from "lucide-react"
 import { toast } from "sonner"
+
+const AUDIENCE_OPTIONS: { value: EntryAudience; label: string; icon: typeof Lock }[] = [
+  { value: "private", label: "เฉพาะฉัน", icon: Lock },
+  { value: "friend", label: "เพื่อน", icon: Users },
+  { value: "public", label: "สาธารณะ", icon: Globe },
+]
 
 interface DiaryFormProps {
   onSuccess: () => void;
@@ -43,6 +50,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
   })
   // For the "@" mention autocomplete in the text editor below.
   const [friends, setFriends] = useState<FriendUser[]>([])
+  const [audience, setAudience] = useState<EntryAudience>(initialData?.audience ?? "private")
 
   useEffect(() => {
     if (!token) return
@@ -63,6 +71,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       nextElements.filter((el): el is ImageScrapElement => el.type === "image").map((el) => el.src)
     )
     setGalleryImages((initialData?.images || []).filter((src) => !canvasSrcs.has(src)))
+    setAudience(initialData?.audience ?? "private")
   }, [initialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,6 +93,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         images,
         created_by: "Watchara",
         layout: { pageWidth: PAGE_WIDTH, elements },
+        audience,
       };
 
       if (initialData?.id) {
@@ -138,6 +148,22 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
           </div>
         </div>
       )}
+
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-foreground">ใครเห็นโพสต์นี้ได้บ้าง</label>
+        <Select value={audience} onValueChange={(v) => setAudience(v as EntryAudience)}>
+          <SelectTrigger className="w-full rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AUDIENCE_OPTIONS.map(({ value, label, icon: Icon }) => (
+              <SelectItem key={value} value={value}>
+                <Icon className="mr-2 size-4" /> {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Button
         type="submit"

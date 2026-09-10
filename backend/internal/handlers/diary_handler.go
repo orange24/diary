@@ -18,6 +18,18 @@ type EntryHandler struct {
 	DB *sql.DB
 }
 
+// normalizeAudience falls back to "private" for anything the DB's CHECK
+// constraint wouldn't accept, so a missing/typo'd value from an older
+// client can't fail the insert/update outright.
+func normalizeAudience(audience string) string {
+	switch audience {
+	case "friend", "public":
+		return audience
+	default:
+		return "private"
+	}
+}
+
 // 1. GetEntries: ดึงเฉพาะของตัวเอง
 func (h *EntryHandler) GetEntries(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -28,7 +40,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	userID := c.MustGet("user_id")
 
 	// เพิ่มเงื่อนไข WHERE user_id = $3
-	query := `SELECT id, title, content, created_date, COALESCE(created_by, ''), images, layout
+	query := `SELECT id, title, content, created_date, COALESCE(created_by, ''), images, layout, audience
 			  FROM entries
 			  WHERE user_id = $3
 			  ORDER BY id DESC LIMIT $1 OFFSET $2`
@@ -44,7 +56,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	for rows.Next() {
 		var e models.Entry
 		var layoutStr sql.NullString
-		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr)
+		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Scan error: " + err.Error()})
 			return
@@ -71,12 +83,13 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 	if len(input.Layout) > 0 {
 		layoutParam = string(input.Layout)
 	}
+	input.Audience = normalizeAudience(input.Audience)
 
 	// เพิ่ม user_id และ layout ลงใน INSERT query
-	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout)
-              VALUES ($1, $2, $3, $4, $5, $6::jsonb) RETURNING id, created_date`
+	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout, audience)
+              VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7) RETURNING id, created_date`
 
-	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam).
+	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam, input.Audience).
 		Scan(&input.ID, &input.CreatedDate)
 
 	if err != nil {
@@ -121,10 +134,11 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 	if len(input.Layout) > 0 {
 		layoutParam = string(input.Layout)
 	}
+	input.Audience = normalizeAudience(input.Audience)
 
-	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb
-			  WHERE id = $6 AND user_id = $7`
-	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, id, userID)
+	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb, audience = $6
+			  WHERE id = $7 AND user_id = $8`
+	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, input.Audience, id, userID)
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to update entry"})
@@ -146,11 +160,11 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 	userID := c.MustGet("user_id")
 	var e models.Entry
 
-	query := `SELECT id, title, content, created_date, created_by, images, layout
+	query := `SELECT id, title, content, created_date, created_by, images, layout, audience
 			  FROM entries WHERE id = $1 AND user_id = $2`
 	var layoutStr sql.NullString
 	err := h.DB.QueryRow(query, id, userID).
-		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr)
+		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience)
 	if err == nil && layoutStr.Valid {
 		e.Layout = json.RawMessage(layoutStr.String)
 	}
