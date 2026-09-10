@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -60,6 +60,29 @@ const hasVisibleText = (elements: ScrapElement[]) =>
     (el) => el.type === "text" && el.text.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length > 0
   )
 
+// Column count at the same breakpoints the old `columns-1 sm:columns-2
+// xl:columns-3` CSS used — tracked in JS now so entries can be assigned to
+// columns in reading order (see below) instead of CSS multi-column's
+// column-major fill, which stacked the newest entries in column 1 alone.
+function useColumnCount() {
+  const [columns, setColumns] = useState(1)
+
+  useEffect(() => {
+    const mqSm = window.matchMedia("(min-width: 640px)")
+    const mqXl = window.matchMedia("(min-width: 1280px)")
+    const update = () => setColumns(mqXl.matches ? 3 : mqSm.matches ? 2 : 1)
+    update()
+    mqSm.addEventListener("change", update)
+    mqXl.addEventListener("change", update)
+    return () => {
+      mqSm.removeEventListener("change", update)
+      mqXl.removeEventListener("change", update)
+    }
+  }, [])
+
+  return columns
+}
+
 export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagClick }: DiaryGridProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentImages, setCurrentImages] = useState<string[]>([])
@@ -67,6 +90,18 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
   // Clicking a card's content pops it open here so the (often scaled-down,
   // masonry-cramped) preview can be read at full size.
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null)
+
+  const columnCount = useColumnCount()
+  // Round-robin entries across columns (entry 0 → col 0, entry 1 → col 1,
+  // ...) so the newest entries read left-to-right across the top before
+  // wrapping down, then each column stacks independently — true masonry
+  // packing (no gaps under a short card) without CSS multi-column's
+  // column-major fill order.
+  const columnEntries = useMemo(() => {
+    const cols: Entry[][] = Array.from({ length: columnCount }, () => [])
+    entries.forEach((entry, i) => cols[i % columnCount].push(entry))
+    return cols
+  }, [entries, columnCount])
 
   const openLightbox = (images: string[], index: number) => {
     setCurrentImages(images)
@@ -101,17 +136,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
     }
   }, [isOpen, nextImage, prevImage, closeLightbox])
 
-  return (
-    // True masonry, not a row-based grid: a CSS multi-column layout packs
-    // each card into whichever column has room next, so a short card is
-    // immediately followed by the next card in that same column instead of
-    // leaving a gap until the next row starts (a CSS Grid's row tracks all
-    // share one height, which is what caused that gap). `break-inside-avoid`
-    // on each card stops it from being split across a column boundary; the
-    // vertical gap between stacked cards comes from each card's own
-    // margin-bottom since column-gap only affects the horizontal gutters.
-    <div className="columns-1 gap-6 sm:columns-2 xl:columns-3">
-      {entries.map((entry) => {
+  const renderEntry = (entry: Entry) => {
         const elements = entry.layout?.elements ?? []
         const isScrapbook = elements.length > 0
         const canvasImageElements = elements.filter((el) => el.type === "image")
@@ -131,7 +156,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
         const isOwn = currentUserId === undefined || entry.user_id === currentUserId
 
         return (
-        <div key={entry.id} className="mb-6 break-inside-avoid">
+        <div key={entry.id}>
           {/* Date now sits above the card (not overlaid on its content) —
               the one piece of metadata that stays visible always.
               Everything else (author, audience, the 3-dot menu) stays out
@@ -271,7 +296,21 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
           </Card>
         </div>
         )
-      })}
+  }
+
+  return (
+    <div>
+      {/* Each column is an independent flex stack (renderEntry's items,
+          assigned round-robin above) — true masonry packing since a short
+          card is immediately followed by the next card in that same
+          column, with no shared row height to leave a gap under it. */}
+      <div className="flex items-start gap-6">
+        {columnEntries.map((colEntries, colIndex) => (
+          <div key={colIndex} className="flex min-w-0 flex-1 flex-col gap-6">
+            {colEntries.map(renderEntry)}
+          </div>
+        ))}
+      </div>
 
       {/* --- Full-content viewer --- */}
       <Dialog open={!!viewingEntry} onOpenChange={(open) => !open && setViewingEntry(null)}>
