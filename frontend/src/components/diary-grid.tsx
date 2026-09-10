@@ -136,11 +136,15 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             isOwn ? "bg-card" : "bg-[#fdf2f8]"
           }`}
         >
-          {/* System metadata (author, audience, the 3-dot menu) stays out of
-              the way by default so the card reads as pure content — it only
-              surfaces on hover. The date is the one exception and stays
-              visible always (its own small badge, see below). */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          {/* Date — the one piece of metadata that stays visible always,
+              top-left. Everything else (author, audience, the 3-dot menu)
+              stays out of the way by default so the card reads as pure
+              content, surfacing on the right only on hover. */}
+          <div className="pointer-events-none absolute left-2 top-2 z-20 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white">
+            {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
+          </div>
+
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <div className="flex items-center gap-2">
               <Avatar className="size-8 border-2 border-white/80">
                 {entry.created_by_avatar && (
@@ -193,13 +197,6 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
                 </DropdownMenu>
               </div>
             )}
-          </div>
-
-          {/* Shifted left of right-2 so it clears the 3-dot menu button
-              (size-8, sitting in the overlay's own right-aligned p-3
-              padding) instead of overlapping it on hover. */}
-          <div className="pointer-events-none absolute right-14 top-2 z-20 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white">
-            {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
           </div>
 
           {isImageOnly ? (
