@@ -40,7 +40,7 @@ export default function DiaryDashboard() {
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [feedLayout, setFeedLayout] = useState<"grid" | "single">("grid")
+  const [feedLayout, setFeedLayout] = useState<"grid" | "single">("single")
   // Single-column mode reserves a real right lane (for content added
   // later); full-width grid mode instead docks a collapsed bar to the
   // screen edge. Only relevant on the home feed — hashtags/friends don't
