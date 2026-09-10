@@ -28,7 +28,14 @@ export function DiaryTimelineSidebar({ entries }: DiaryTimelineSidebarProps) {
     }
   }
 
-  if (groups.length === 0) return null
+  // Never render nothing: the parent grid places its children into tracks
+  // by DOM order (200px sidebar, flexible center, optional right lane) — a
+  // sidebar that disappears entirely for a brand-new account with no
+  // entries yet would shift the center feed into the 200px sidebar track
+  // instead, squeezing the whole page into a sliver. An empty placeholder
+  // keeps this component's slot in the grid without showing anything.
+  if (groups.length === 0) return <div aria-hidden className="hidden lg:block" />
+
 
   const scrollToAnchor = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
