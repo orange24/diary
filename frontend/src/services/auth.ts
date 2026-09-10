@@ -49,6 +49,7 @@ export interface ProfileData {
   gmail_link: string;
   apple_id_link: string;
   x_link: string;
+  profile_picture: string;
 }
 
 export const getProfile = async (token: string): Promise<ProfileData> => {

@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
 export type DiaryView = "home" | "hashtags" | "friends"
@@ -27,11 +27,12 @@ const NAV_ITEMS: { view: DiaryView; label: string; icon: typeof Home }[] = [
 interface DiaryHeaderProps {
   onLogout?: () => void
   userName?: string
+  userAvatar?: string
   activeView: DiaryView
   onViewChange: (view: DiaryView) => void
 }
 
-export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: DiaryHeaderProps) {
+export function DiaryHeader({ onLogout, userName, userAvatar, activeView, onViewChange }: DiaryHeaderProps) {
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const isDark = theme === "dark"
@@ -89,6 +90,7 @@ export function DiaryHeader({ onLogout, userName, activeView, onViewChange }: Di
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative size-10 rounded-full p-0 overflow-hidden hover:bg-muted">
                 <Avatar className="size-10 border-2 border-primary/10">
+                  {userAvatar && <AvatarImage src={userAvatar} alt={userName || "Profile"} />}
                   <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">
                     {getInitials(userName)}
                   </AvatarFallback>

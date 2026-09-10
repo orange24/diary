@@ -22,6 +22,9 @@ export interface Entry {
   // The entry's owner — lets the UI tell its own entries apart from a
   // friend's entry merged into the same feed.
   user_id: number;
+  // The author's profile picture, shown next to their name in the feed
+  // card's hover overlay. Only populated by getEntries.
+  created_by_avatar?: string;
 }
 
 // 1. ดึงรายการบันทึก (แบบปลอดภัย)

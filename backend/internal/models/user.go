@@ -14,4 +14,9 @@ type User struct {
 	GmailLink    string `json:"gmail_link"`
 	AppleIDLink  string `json:"apple_id_link"`
 	XLink        string `json:"x_link"`
+
+	// A data: URI (resized+compressed client-side) rather than a hosted
+	// Cloudinary URL — registration happens before the user has a JWT, and
+	// the existing upload endpoint requires one.
+	ProfilePicture string `json:"profile_picture"`
 }

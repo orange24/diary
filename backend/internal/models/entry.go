@@ -19,4 +19,7 @@ type Entry struct {
 	// The entry's owner — lets the frontend tell its own entries apart from
 	// a friend's entry merged into the same feed (e.g. to style/gate them).
 	UserID int `json:"user_id"`
+	// The author's profile picture (only populated by GetEntries), shown
+	// next to their name in the feed card's hover overlay.
+	CreatedByAvatar string `json:"created_by_avatar,omitempty"`
 }

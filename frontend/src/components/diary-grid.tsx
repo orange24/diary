@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, Lock, Users, Globe } from "lucide-react"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, Lock, Users, Globe, User } from "lucide-react"
 import { Entry, EntryAudience } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
@@ -115,16 +116,26 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               surfaces on hover. The date is the one exception and stays
               visible always (its own small badge, see below). */}
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-white">
-              <span>By {entry.created_by || 'Anonymous'}</span>
-              {entry.audience && (() => {
-                const { label, icon: Icon } = AUDIENCE_META[entry.audience]
-                return (
-                  <span className="flex items-center gap-1" title={label}>
-                    <Icon className="size-3" /> {label}
-                  </span>
-                )
-              })()}
+            <div className="flex items-center gap-2">
+              <Avatar className="size-8 border-2 border-white/80">
+                {entry.created_by_avatar && (
+                  <AvatarImage src={entry.created_by_avatar} alt={entry.created_by || "Profile"} />
+                )}
+                <AvatarFallback className="bg-white/20 text-white">
+                  <User className="size-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col leading-tight">
+                <span className="text-sm font-bold text-white">{entry.created_by || 'Anonymous'}</span>
+                {entry.audience && (() => {
+                  const { label, icon: Icon } = AUDIENCE_META[entry.audience]
+                  return (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-white/80" title={label}>
+                      <Icon className="size-3" /> {label}
+                    </span>
+                  )
+                })()}
+              </div>
             </div>
 
             {isOwn && (

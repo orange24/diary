@@ -166,6 +166,7 @@ export default function DiaryDashboard() {
       <DiaryHeader
         onLogout={handleLogout}
         userName={user?.full_name}
+        userAvatar={user?.profile_picture}
         activeView={activeView}
         onViewChange={handleViewChange}
       />

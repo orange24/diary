@@ -30,13 +30,13 @@ func (h *EntryHandler) Register(c *gin.Context) {
 
 	query := `INSERT INTO users (
 		username, password, full_name, birthdate, gender, country,
-		facebook_link, gmail_link, apple_id_link, x_link
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+		facebook_link, gmail_link, apple_id_link, x_link, profile_picture
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	_, err := h.DB.Exec(query,
 		user.Username, string(hashedPassword), user.FullName, birthdate,
 		user.Gender, user.Country, user.FacebookLink, user.GmailLink,
-		user.AppleIDLink, user.XLink,
+		user.AppleIDLink, user.XLink, user.ProfilePicture,
 	)
 
 	if err != nil {
@@ -58,12 +58,13 @@ func (h *EntryHandler) Login(c *gin.Context) {
 
 	var dbUser models.User
 	// 1. เพิ่ม username และ full_name เข้าไปใน Query
-	query := "SELECT id, username, full_name, password FROM users WHERE username = $1"
+	query := "SELECT id, username, full_name, password, COALESCE(profile_picture, '') FROM users WHERE username = $1"
 	err := h.DB.QueryRow(query, input.Username).Scan(
 		&dbUser.ID,
 		&dbUser.Username,
 		&dbUser.FullName,
 		&dbUser.Password,
+		&dbUser.ProfilePicture,
 	)
 
 	if err != nil {
@@ -85,10 +86,11 @@ func (h *EntryHandler) Login(c *gin.Context) {
 
 	// 2. ตอนนี้ dbUser จะมีข้อมูลครบพร้อมส่งแล้วครับ
 	c.JSON(http.StatusOK, gin.H{
-		"token":     token,
-		"userId":    dbUser.ID,
-		"username":  dbUser.Username,
-		"full_name": dbUser.FullName,
+		"token":           token,
+		"userId":          dbUser.ID,
+		"username":        dbUser.Username,
+		"full_name":       dbUser.FullName,
+		"profile_picture": dbUser.ProfilePicture,
 	})
 }
 
@@ -99,12 +101,13 @@ func (h *EntryHandler) GetProfile(c *gin.Context) {
 	var u models.User
 	query := `SELECT id, username, full_name,
 		COALESCE(to_char(birthdate, 'YYYY-MM-DD'), ''), COALESCE(gender, ''), COALESCE(country, ''),
-		COALESCE(facebook_link, ''), COALESCE(gmail_link, ''), COALESCE(apple_id_link, ''), COALESCE(x_link, '')
+		COALESCE(facebook_link, ''), COALESCE(gmail_link, ''), COALESCE(apple_id_link, ''), COALESCE(x_link, ''),
+		COALESCE(profile_picture, '')
 		FROM users WHERE id = $1`
 
 	err := h.DB.QueryRow(query, userID).Scan(
 		&u.ID, &u.Username, &u.FullName, &u.Birthdate, &u.Gender, &u.Country,
-		&u.FacebookLink, &u.GmailLink, &u.AppleIDLink, &u.XLink,
+		&u.FacebookLink, &u.GmailLink, &u.AppleIDLink, &u.XLink, &u.ProfilePicture,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -115,14 +118,15 @@ func (h *EntryHandler) GetProfile(c *gin.Context) {
 }
 
 type UpdateProfileInput struct {
-	FullName     string `json:"full_name"`
-	Birthdate    string `json:"birthdate"`
-	Gender       string `json:"gender"`
-	Country      string `json:"country"`
-	FacebookLink string `json:"facebook_link"`
-	GmailLink    string `json:"gmail_link"`
-	AppleIDLink  string `json:"apple_id_link"`
-	XLink        string `json:"x_link"`
+	FullName       string `json:"full_name"`
+	Birthdate      string `json:"birthdate"`
+	Gender         string `json:"gender"`
+	Country        string `json:"country"`
+	FacebookLink   string `json:"facebook_link"`
+	GmailLink      string `json:"gmail_link"`
+	AppleIDLink    string `json:"apple_id_link"`
+	XLink          string `json:"x_link"`
+	ProfilePicture string `json:"profile_picture"`
 }
 
 // --- แก้ไขโปรไฟล์ตัวเอง --- (username/password เปลี่ยนที่นี่ไม่ได้ — คนละหน้าที่)
@@ -144,13 +148,14 @@ func (h *EntryHandler) UpdateProfile(c *gin.Context) {
 
 	query := `UPDATE users SET
 		full_name = $1, birthdate = $2, gender = $3, country = $4,
-		facebook_link = $5, gmail_link = $6, apple_id_link = $7, x_link = $8
-		WHERE id = $9`
+		facebook_link = $5, gmail_link = $6, apple_id_link = $7, x_link = $8,
+		profile_picture = $9
+		WHERE id = $10`
 
 	_, err := h.DB.Exec(query,
 		input.FullName, birthdate, input.Gender, input.Country,
 		input.FacebookLink, input.GmailLink, input.AppleIDLink, input.XLink,
-		userID,
+		input.ProfilePicture, userID,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

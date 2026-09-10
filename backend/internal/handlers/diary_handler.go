@@ -71,8 +71,9 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 		args = append(args, "@"+regexp.QuoteMeta(username)+`\y`)
 	}
 
-	query := `SELECT e.id, e.title, e.content, e.created_date, COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id
+	query := `SELECT e.id, e.title, e.content, e.created_date, COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id, COALESCE(u.profile_picture, '')
 			  FROM entries e
+			  LEFT JOIN users u ON u.id = e.user_id
 			  WHERE e.user_id = $1` + mergeFriendsClause + `
 			  ORDER BY e.id DESC LIMIT $2 OFFSET $3`
 
@@ -87,7 +88,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	for rows.Next() {
 		var e models.Entry
 		var layoutStr sql.NullString
-		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID)
+		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID, &e.CreatedByAvatar)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Scan error: " + err.Error()})
 			return

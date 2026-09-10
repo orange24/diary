@@ -1,11 +1,13 @@
 "use client"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { register } from "@/services/auth"
+import { resizeImageToDataUrl } from "@/lib/image-utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Camera, User } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
@@ -21,14 +23,28 @@ export default function RegisterPage() {
     facebook_link: "",
     gmail_link: "",
     apple_id_link: "",
-    x_link: ""
+    x_link: "",
+    profile_picture: "",
   })
-  
+
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const pictureInputRef = useRef<HTMLInputElement>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    try {
+      const dataUrl = await resizeImageToDataUrl(file)
+      setFormData((prev) => ({ ...prev, profile_picture: dataUrl }))
+    } catch (err: any) {
+      toast.error("Couldn't use that image", { description: err.message })
+    }
   }
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -70,6 +86,32 @@ export default function RegisterPage() {
 
         <CardContent className="p-8">
           <form onSubmit={onSubmit} className="space-y-6">
+
+            <div className="flex flex-col items-center gap-3">
+              <button
+                type="button"
+                onClick={() => pictureInputRef.current?.click()}
+                className="group relative flex size-24 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-neutral-300 bg-neutral-100 text-neutral-400 transition-colors hover:border-logo hover:text-logo"
+              >
+                {formData.profile_picture ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={formData.profile_picture} alt="Profile preview" className="size-full object-cover" />
+                ) : (
+                  <User className="size-10" />
+                )}
+                <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Camera className="size-6 text-white" />
+                </span>
+              </button>
+              <input
+                ref={pictureInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePictureChange}
+              />
+              <p className="text-xs font-medium text-neutral-500">Profile picture (optional)</p>
+            </div>
 
             {/* ส่วนที่ 1: ข้อมูลบัญชี (Account Info) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

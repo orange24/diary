@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Camera, Loader2, User } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/context/auth-context"
 import { getProfile, updateProfile, ProfileUpdate } from "@/services/auth"
+import { resizeImageToDataUrl } from "@/lib/image-utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,6 +20,7 @@ const emptyForm: ProfileUpdate = {
   gmail_link: "",
   apple_id_link: "",
   x_link: "",
+  profile_picture: "",
 }
 
 export default function ProfilePage() {
@@ -28,6 +30,7 @@ export default function ProfilePage() {
   const [form, setForm] = useState<ProfileUpdate>(emptyForm)
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [saving, setSaving] = useState(false)
+  const pictureInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!authLoading && !token) router.push("/login")
@@ -48,6 +51,7 @@ export default function ProfilePage() {
           gmail_link: data.gmail_link,
           apple_id_link: data.apple_id_link,
           x_link: data.x_link,
+          profile_picture: data.profile_picture,
         })
       })
       .catch((err: any) => toast.error("Failed to load profile", { description: err.message }))
@@ -58,13 +62,25 @@ export default function ProfilePage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    try {
+      const dataUrl = await resizeImageToDataUrl(file)
+      setForm((prev) => ({ ...prev, profile_picture: dataUrl }))
+    } catch (err: any) {
+      toast.error("Couldn't use that image", { description: err.message })
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
     setSaving(true)
     try {
       await updateProfile(form, token)
-      updateUser({ full_name: form.full_name })
+      updateUser({ full_name: form.full_name, profile_picture: form.profile_picture })
       toast.success("Profile saved")
       router.push("/")
     } catch (err: any) {
@@ -101,6 +117,31 @@ export default function ProfilePage() {
 
       <main className="container mx-auto max-w-3xl px-4 py-10">
         <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl border border-border bg-card p-8 shadow-sm">
+          <div className="flex flex-col items-center gap-3">
+            <button
+              type="button"
+              onClick={() => pictureInputRef.current?.click()}
+              className="group relative flex size-24 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-muted text-muted-foreground transition-colors hover:border-logo hover:text-logo"
+            >
+              {form.profile_picture ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.profile_picture} alt="Profile" className="size-full object-cover" />
+              ) : (
+                <User className="size-10" />
+              )}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                <Camera className="size-6 text-white" />
+              </span>
+            </button>
+            <input
+              ref={pictureInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePictureChange}
+            />
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">Username</label>
             <Input value={username} disabled className="rounded-xl" />
