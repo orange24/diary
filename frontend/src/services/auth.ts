@@ -50,6 +50,8 @@ export interface ProfileData {
   apple_id_link: string;
   x_link: string;
   profile_picture: string;
+  // Public profile page slug (/<slug>) — server-generated, read-only.
+  slug: string;
 }
 
 export const getProfile = async (token: string): Promise<ProfileData> => {
@@ -63,7 +65,7 @@ export const getProfile = async (token: string): Promise<ProfileData> => {
   return response.json();
 };
 
-export type ProfileUpdate = Omit<ProfileData, 'id' | 'username'>;
+export type ProfileUpdate = Omit<ProfileData, 'id' | 'username' | 'slug'>;
 
 export const updateProfile = async (data: ProfileUpdate, token: string) => {
   const response = await fetch(`${API_BASE_URL}/profile`, {

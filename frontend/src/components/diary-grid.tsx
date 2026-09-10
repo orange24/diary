@@ -22,6 +22,7 @@ import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
 import { linkifyMentions } from "@/lib/mentions"
 import { ScrapElement } from "@/types/scrapbook"
 import { formatEntryDate } from "@/lib/date-format"
+import Link from "next/link"
 
 interface DiaryGridProps {
   entries: Entry[]
@@ -147,27 +148,40 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             }`}
           >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <div className="flex items-center gap-2">
-              <Avatar className="size-8 border-2 border-white/80">
-                {entry.created_by_avatar && (
-                  <AvatarImage src={entry.created_by_avatar} alt={entry.created_by || "Profile"} />
-                )}
-                <AvatarFallback className="bg-white/20 text-white">
-                  <User className="size-4" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-bold text-white">{entry.created_by || 'Anonymous'}</span>
-                {entry.audience && (() => {
-                  const { label, icon: Icon } = AUDIENCE_META[entry.audience]
-                  return (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-white/80" title={label}>
-                      <Icon className="size-3" /> {label}
-                    </span>
-                  )
-                })()}
-              </div>
-            </div>
+            {(() => {
+              const authorContent = (
+                <>
+                  <Avatar className="size-8 border-2 border-white/80">
+                    {entry.created_by_avatar && (
+                      <AvatarImage src={entry.created_by_avatar} alt={entry.created_by || "Profile"} />
+                    )}
+                    <AvatarFallback className="bg-white/20 text-white">
+                      <User className="size-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-sm font-bold text-white">{entry.created_by || 'Anonymous'}</span>
+                    {entry.audience && (() => {
+                      const { label, icon: Icon } = AUDIENCE_META[entry.audience]
+                      return (
+                        <span className="flex items-center gap-1 text-[10px] font-medium text-white/80" title={label}>
+                          <Icon className="size-3" /> {label}
+                        </span>
+                      )
+                    })()}
+                  </div>
+                </>
+              )
+              // Links to the author's public profile page — only possible
+              // once the feed actually knows their slug.
+              return entry.created_by_slug ? (
+                <Link href={`/${entry.created_by_slug}`} className="pointer-events-auto flex items-center gap-2 hover:opacity-90">
+                  {authorContent}
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2">{authorContent}</div>
+              )
+            })()}
 
             {isOwn && (
               <div className="pointer-events-auto">
@@ -266,16 +280,35 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             <>
               <DialogHeader>
                 <div className="flex items-center gap-3">
-                  <Avatar className="size-10">
-                    {viewingEntry.created_by_avatar && (
-                      <AvatarImage src={viewingEntry.created_by_avatar} alt={viewingEntry.created_by || "Profile"} />
-                    )}
-                    <AvatarFallback>
-                      <User className="size-5" />
-                    </AvatarFallback>
-                  </Avatar>
+                  {viewingEntry.created_by_slug ? (
+                    <Link href={`/${viewingEntry.created_by_slug}`} onClick={() => setViewingEntry(null)} className="hover:opacity-80">
+                      <Avatar className="size-10">
+                        {viewingEntry.created_by_avatar && (
+                          <AvatarImage src={viewingEntry.created_by_avatar} alt={viewingEntry.created_by || "Profile"} />
+                        )}
+                        <AvatarFallback>
+                          <User className="size-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </Link>
+                  ) : (
+                    <Avatar className="size-10">
+                      {viewingEntry.created_by_avatar && (
+                        <AvatarImage src={viewingEntry.created_by_avatar} alt={viewingEntry.created_by || "Profile"} />
+                      )}
+                      <AvatarFallback>
+                        <User className="size-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="flex flex-col text-left leading-tight">
-                    <DialogTitle className="text-base">{viewingEntry.created_by || "Anonymous"}</DialogTitle>
+                    {viewingEntry.created_by_slug ? (
+                      <Link href={`/${viewingEntry.created_by_slug}`} onClick={() => setViewingEntry(null)} className="hover:underline">
+                        <DialogTitle className="text-base">{viewingEntry.created_by || "Anonymous"}</DialogTitle>
+                      </Link>
+                    ) : (
+                      <DialogTitle className="text-base">{viewingEntry.created_by || "Anonymous"}</DialogTitle>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {formatEntryDate(viewingEntry.created_date)}
                     </span>

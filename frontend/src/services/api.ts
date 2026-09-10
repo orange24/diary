@@ -25,7 +25,42 @@ export interface Entry {
   // The author's profile picture, shown next to their name in the feed
   // card's hover overlay. Only populated by getEntries.
   created_by_avatar?: string;
+  // The author's public profile slug, used to link their name in the feed
+  // card to /<slug>. Only populated by getEntries.
+  created_by_slug?: string;
 }
+
+export interface PublicProfile {
+  id: number;
+  username: string;
+  full_name: string;
+  profile_picture: string;
+  facebook_link: string;
+  gmail_link: string;
+  apple_id_link: string;
+  x_link: string;
+  slug: string;
+  is_self: boolean;
+  is_friend: boolean;
+}
+
+export interface PublicProfileResponse {
+  profile: PublicProfile;
+  entries: Entry[];
+}
+
+// Fetch a user's public profile page by their slug (/<slug>) — entries
+// come back already filtered server-side by audience/friendship.
+export const getPublicProfile = async (slug: string, token: string): Promise<PublicProfileResponse> => {
+  const res = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(slug)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to load profile");
+  }
+  return res.json();
+};
 
 // 1. ดึงรายการบันทึก (แบบปลอดภัย)
 export const getEntries = async (page: number, limit: number, token: string): Promise<Entry[]> => {

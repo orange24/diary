@@ -44,6 +44,7 @@ export default function LoginPage() {
         username: data.username,
         full_name: data.full_name,
         profile_picture: data.profile_picture,
+        slug: data.slug,
       })
       router.push("/")
     } catch (err: any) {

@@ -7,6 +7,8 @@ interface UserData {
   username: string;
   full_name: string;
   profile_picture?: string;
+  // Public profile page slug (/<slug>) — server-generated, read-only.
+  slug?: string;
 }
 
 interface AuthContextType {

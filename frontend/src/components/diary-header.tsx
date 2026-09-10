@@ -28,11 +28,12 @@ interface DiaryHeaderProps {
   onLogout?: () => void
   userName?: string
   userAvatar?: string
+  userSlug?: string
   activeView: DiaryView
   onViewChange: (view: DiaryView) => void
 }
 
-export function DiaryHeader({ onLogout, userName, userAvatar, activeView, onViewChange }: DiaryHeaderProps) {
+export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeView, onViewChange }: DiaryHeaderProps) {
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const isDark = theme === "dark"
@@ -109,6 +110,12 @@ export function DiaryHeader({ onLogout, userName, userAvatar, activeView, onView
                 <UserCog className="mr-2 size-4" />
                 <span>Edit Profile</span>
               </DropdownMenuItem>
+              {userSlug && (
+                <DropdownMenuItem onClick={() => router.push(`/${userSlug}`)} className="cursor-pointer font-medium">
+                  <User className="mr-2 size-4" />
+                  <span>My Public Profile</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuCheckboxItem
                 checked={isDark}
                 onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}

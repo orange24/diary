@@ -70,6 +70,7 @@ func main() {
 
 		authorized.GET("/profile", entryHandler.GetProfile)
 		authorized.PUT("/profile", entryHandler.UpdateProfile)
+		authorized.GET("/profile/:slug", entryHandler.GetPublicProfile)
 
 		authorized.GET("/users/search", entryHandler.SearchUsers)
 		authorized.GET("/friends", entryHandler.ListFriends)

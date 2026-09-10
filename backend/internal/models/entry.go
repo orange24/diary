@@ -22,4 +22,7 @@ type Entry struct {
 	// The author's profile picture (only populated by GetEntries), shown
 	// next to their name in the feed card's hover overlay.
 	CreatedByAvatar string `json:"created_by_avatar,omitempty"`
+	// The author's profile slug (only populated by GetEntries), used to
+	// link the feed card's author name to their public profile page.
+	CreatedBySlug string `json:"created_by_slug,omitempty"`
 }

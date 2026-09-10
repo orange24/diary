@@ -19,4 +19,9 @@ type User struct {
 	// Cloudinary URL — registration happens before the user has a JWT, and
 	// the existing upload endpoint requires one.
 	ProfilePicture string `json:"profile_picture"`
+
+	// URL slug for this user's public profile page (/<slug>) — generated
+	// once at registration from their full name (or username), de-duplicated
+	// with a numeric suffix. Immutable: no endpoint accepts changes to it.
+	Slug string `json:"slug"`
 }

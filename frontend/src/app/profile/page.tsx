@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera, Loader2, User } from "lucide-react"
+import { ArrowLeft, Camera, Check, Copy, Loader2, User } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/context/auth-context"
 import { getProfile, updateProfile, ProfileUpdate } from "@/services/auth"
@@ -27,6 +27,8 @@ export default function ProfilePage() {
   const router = useRouter()
   const { token, isLoading: authLoading, updateUser } = useAuth()
   const [username, setUsername] = useState("")
+  const [slug, setSlug] = useState("")
+  const [copied, setCopied] = useState(false)
   const [form, setForm] = useState<ProfileUpdate>(emptyForm)
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -42,6 +44,7 @@ export default function ProfilePage() {
     getProfile(token)
       .then((data) => {
         setUsername(data.username)
+        setSlug(data.slug)
         setForm({
           full_name: data.full_name,
           birthdate: data.birthdate,
@@ -71,6 +74,17 @@ export default function ProfilePage() {
       setForm((prev) => ({ ...prev, profile_picture: dataUrl }))
     } catch (err: any) {
       toast.error("Couldn't use that image", { description: err.message })
+    }
+  }
+
+  const handleCopyLink = async () => {
+    if (!slug || typeof window === "undefined") return
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error("Couldn't copy the link")
     }
   }
 
@@ -145,6 +159,21 @@ export default function ProfilePage() {
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">Username</label>
             <Input value={username} disabled className="rounded-xl" />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Your public profile link</label>
+            <div className="flex gap-2">
+              <Input
+                value={typeof window !== "undefined" ? `${window.location.origin}/${slug}` : `/${slug}`}
+                disabled
+                className="rounded-xl"
+              />
+              <Button type="button" variant="outline" size="icon" className="shrink-0 rounded-xl" onClick={handleCopyLink}>
+                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">This link is generated from your name and can't be changed.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
