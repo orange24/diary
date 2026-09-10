@@ -170,8 +170,8 @@ export default function DiaryDashboard() {
         onViewChange={handleViewChange}
       />
 
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)_200px] gap-8">
+      <main className="mx-auto w-full max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[200px_minmax(0,1fr)]">
           {/* Left: year/month timeline */}
           <DiaryTimelineSidebar entries={entries} />
 
@@ -231,9 +231,6 @@ export default function DiaryDashboard() {
               </>
             )}
           </div>
-
-          {/* Right: reserved for future content */}
-          <aside className="hidden lg:block" />
         </div>
       </main>
 

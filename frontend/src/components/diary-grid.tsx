@@ -86,7 +86,13 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
   }, [isOpen, nextImage, prevImage, closeLightbox])
 
   return (
-    <div className="grid grid-cols-1 gap-6">
+    // A gallery grid, not a single column: cards flow left-to-right then
+    // down, row by row (plain CSS Grid's default auto-flow already reads
+    // this way) — so the newest entry sits top-left and reading order
+    // matches print order, same as a comic-book page. `items-start` keeps
+    // each card at its own natural height instead of being stretched to
+    // match the tallest card in its row.
+    <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-3">
       {entries.map((entry) => {
         const isScrapbook = !!(entry.layout?.elements && entry.layout.elements.length > 0)
         const hasImages = entry.images && entry.images.length > 0
