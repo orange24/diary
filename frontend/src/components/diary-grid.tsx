@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,35 +106,35 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
         <Card
           key={entry.id}
           id={`entry-${entry.id}`}
-          className={`group relative mb-6 flex break-inside-avoid flex-col overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 scroll-mt-24 ${
+          className={`group relative mb-6 block break-inside-avoid gap-0 overflow-hidden border-none p-0 shadow-sm transition-all duration-300 hover:shadow-md scroll-mt-24 ${
             isOwn ? "bg-card" : "bg-[#fdf2f8]"
           }`}
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl font-bold text-card-foreground">{entry.title}</CardTitle>
-            <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          {/* System metadata (author, audience, the 3-dot menu) stays out of
+              the way by default so the card reads as pure content — it only
+              surfaces on hover. The date is the one exception and stays
+              visible always (its own small badge, see below). */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-white">
               <span>By {entry.created_by || 'Anonymous'}</span>
-              <div className="flex items-center gap-3">
-                {entry.audience && (() => {
-                  const { label, icon: Icon } = AUDIENCE_META[entry.audience]
-                  return (
-                    <span className="flex items-center gap-1" title={label}>
-                      <Icon className="size-3" /> {label}
-                    </span>
-                  )
-                })()}
-                <span>{entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}</span>
-              </div>
+              {entry.audience && (() => {
+                const { label, icon: Icon } = AUDIENCE_META[entry.audience]
+                return (
+                  <span className="flex items-center gap-1" title={label}>
+                    <Icon className="size-3" /> {label}
+                  </span>
+                )
+              })()}
             </div>
 
             {isOwn && (
-              <CardAction>
+              <div className="pointer-events-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-8 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="size-8 rounded-full text-white hover:bg-white/20 hover:text-white"
                     >
                       <MoreVertical className="size-4" />
                     </Button>
@@ -155,31 +155,33 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </CardAction>
+              </div>
             )}
-          </CardHeader>
+          </div>
 
-          <CardContent className="space-y-4">
-            {isScrapbook ? (
-              <ScrapbookPreview elements={entry.layout!.elements} onHashtagClick={onHashtagClick} />
-            ) : (
-              <div
-                className="prose dark:prose-invert max-w-none text-muted-foreground"
-                onClick={(e) => {
-                  const tag = hashtagFromClick(e)
-                  if (tag) onHashtagClick?.(tag)
-                }}
-                dangerouslySetInnerHTML={{ __html: linkifyMentions(linkifyHashtags(getCleanHtml(entry.content))) }}
-              />
-            )}
+          <div className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white">
+            {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
+          </div>
 
-            {hasImages && (
-              <GalleryMosaic
-                images={entry.images}
-                onImageClick={(index) => openLightbox(entry.images, index)}
-              />
-            )}
-          </CardContent>
+          {isScrapbook ? (
+            <ScrapbookPreview elements={entry.layout!.elements} onHashtagClick={onHashtagClick} />
+          ) : (
+            <div
+              className="prose dark:prose-invert max-w-none p-4 text-muted-foreground"
+              onClick={(e) => {
+                const tag = hashtagFromClick(e)
+                if (tag) onHashtagClick?.(tag)
+              }}
+              dangerouslySetInnerHTML={{ __html: linkifyMentions(linkifyHashtags(getCleanHtml(entry.content))) }}
+            />
+          )}
+
+          {hasImages && (
+            <GalleryMosaic
+              images={entry.images}
+              onImageClick={(index) => openLightbox(entry.images, index)}
+            />
+          )}
         </Card>
         )
       })}
