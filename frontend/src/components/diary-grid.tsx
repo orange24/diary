@@ -135,7 +135,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               Everything else (author, audience, the 3-dot menu) stays out
               of the card's way by default so it reads as pure content,
               surfacing on the right only on hover. */}
-          <div className="mb-1.5 text-[10px] font-semibold text-neutral-800">
+          <div className="mb-1.5 text-[10px] font-semibold text-muted-foreground">
             {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
           </div>
 
