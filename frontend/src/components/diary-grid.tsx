@@ -20,6 +20,7 @@ import { GalleryMosaic } from "@/components/gallery-mosaic"
 import { isVideo, getDisplayMedia } from "@/lib/media-utils"
 import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
 import { linkifyMentions } from "@/lib/mentions"
+import { ScrapElement } from "@/types/scrapbook"
 
 interface DiaryGridProps {
   entries: Entry[]
@@ -42,12 +43,20 @@ const AUDIENCE_META: Record<EntryAudience, { label: string; icon: typeof Lock }>
 const getCleanHtml = (html: string) => {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
-      'b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 
+      'b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
       'h1', 'h2', 'h3', 'code', 'pre', 'span', 'blockquote'
     ],
     ALLOWED_ATTR: ['href', 'target', 'class']
   });
 };
+
+// True once any text box actually has content — an entry with only
+// image/sticker elements (no writing at all) gets shown as a plain photo
+// filling the whole card instead of the scrapbook page it's placed on.
+const hasVisibleText = (elements: ScrapElement[]) =>
+  elements.some(
+    (el) => el.type === "text" && el.text.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length > 0
+  )
 
 export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagClick }: DiaryGridProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -101,7 +110,13 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
     // margin-bottom since column-gap only affects the horizontal gutters.
     <div className="columns-1 gap-6 sm:columns-2 xl:columns-3">
       {entries.map((entry) => {
-        const isScrapbook = !!(entry.layout?.elements && entry.layout.elements.length > 0)
+        const elements = entry.layout?.elements ?? []
+        const isScrapbook = elements.length > 0
+        const imageOnlyElements = elements.filter((el) => el.type === "image")
+        // No writing anywhere on the page — just photo(s)/sticker(s) — so
+        // show them as a plain photo filling the card instead of the
+        // (mostly blank) scrapbook page they're placed on.
+        const isImageOnlyScrapbook = isScrapbook && imageOnlyElements.length > 0 && !hasVisibleText(elements)
         const hasImages = entry.images && entry.images.length > 0
         // A friend's entry merged into this feed (because it tags this
         // user) — never own unless currentUserId isn't known yet.
@@ -181,26 +196,48 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
           </div>
 
-          {/* Opens the full-size viewer below. Hashtag clicks (in either
-              branch) stopPropagation once handled, so tapping a tag
-              navigates instead of also popping the viewer open. */}
-          <div className="cursor-pointer" onClick={() => setViewingEntry(entry)}>
-            {isScrapbook ? (
-              <ScrapbookPreview elements={entry.layout!.elements} onHashtagClick={onHashtagClick} />
-            ) : (
-              <div
-                className="prose dark:prose-invert max-w-none p-4 text-muted-foreground"
-                onClick={(e) => {
-                  const tag = hashtagFromClick(e)
-                  if (tag) {
-                    e.stopPropagation()
-                    onHashtagClick?.(tag)
-                  }
-                }}
-                dangerouslySetInnerHTML={{ __html: linkifyMentions(linkifyHashtags(getCleanHtml(entry.content))) }}
+          {isImageOnlyScrapbook ? (
+            // No writing on the page at all — show the photo(s) themselves
+            // filling the card edge-to-edge instead of the mostly-blank
+            // scrapbook page they sit on. Clicking opens the same
+            // full-screen lightbox as gallery photos, not the content
+            // viewer (there's no text for that dialog to help read).
+            imageOnlyElements.length === 1 ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageOnlyElements[0].src}
+                alt=""
+                className="block w-full h-auto cursor-pointer"
+                onClick={() => openLightbox([imageOnlyElements[0].src], 0)}
               />
-            )}
-          </div>
+            ) : (
+              <GalleryMosaic
+                images={imageOnlyElements.map((el) => el.src)}
+                onImageClick={(index) => openLightbox(imageOnlyElements.map((el) => el.src), index)}
+              />
+            )
+          ) : (
+            /* Opens the full-size viewer below. Hashtag clicks (in either
+               branch) stopPropagation once handled, so tapping a tag
+               navigates instead of also popping the viewer open. */
+            <div className="cursor-pointer" onClick={() => setViewingEntry(entry)}>
+              {isScrapbook ? (
+                <ScrapbookPreview elements={entry.layout!.elements} onHashtagClick={onHashtagClick} />
+              ) : (
+                <div
+                  className="prose dark:prose-invert max-w-none p-4 text-muted-foreground"
+                  onClick={(e) => {
+                    const tag = hashtagFromClick(e)
+                    if (tag) {
+                      e.stopPropagation()
+                      onHashtagClick?.(tag)
+                    }
+                  }}
+                  dangerouslySetInnerHTML={{ __html: linkifyMentions(linkifyHashtags(getCleanHtml(entry.content))) }}
+                />
+              )}
+            </div>
+          )}
 
           {hasImages && (
             <GalleryMosaic
