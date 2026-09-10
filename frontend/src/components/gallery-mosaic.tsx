@@ -50,12 +50,15 @@ function Tile({ src, index, onClick, overlayCount, className = "" }: TileProps) 
 export function GalleryMosaic({ images, onImageClick }: GalleryMosaicProps) {
   if (images.length === 0) return null
 
-  const containerClass = "grid gap-1 rounded-xl overflow-hidden h-72"
+  // No rounding of its own — this sits flush against whatever content
+  // (or card edge) is above/below it; the enclosing Card's own
+  // rounded corners + overflow-hidden clip the true outer edges.
+  const containerClass = "grid gap-1 overflow-hidden h-72"
 
   if (images.length === 1) {
     return (
       <div className={containerClass}>
-        <Tile src={images[0]} index={0} onClick={onImageClick} className="rounded-xl" />
+        <Tile src={images[0]} index={0} onClick={onImageClick} />
       </div>
     )
   }
