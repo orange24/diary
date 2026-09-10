@@ -129,21 +129,22 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
         const isOwn = currentUserId === undefined || entry.user_id === currentUserId
 
         return (
-        <Card
-          key={entry.id}
-          id={`entry-${entry.id}`}
-          className={`group relative mb-6 block break-inside-avoid gap-0 overflow-hidden border-none p-0 shadow-sm transition-all duration-300 hover:shadow-md scroll-mt-24 ${
-            isOwn ? "bg-card" : "bg-[#fdf2f8]"
-          }`}
-        >
-          {/* Date — the one piece of metadata that stays visible always,
-              top-left. Everything else (author, audience, the 3-dot menu)
-              stays out of the way by default so the card reads as pure
-              content, surfacing on the right only on hover. */}
-          <div className="pointer-events-none absolute left-2 top-2 z-20 text-[10px] font-semibold text-neutral-800">
+        <div key={entry.id} className="mb-6 break-inside-avoid">
+          {/* Date now sits above the card (not overlaid on its content) —
+              the one piece of metadata that stays visible always.
+              Everything else (author, audience, the 3-dot menu) stays out
+              of the card's way by default so it reads as pure content,
+              surfacing on the right only on hover. */}
+          <div className="mb-1.5 text-[10px] font-semibold text-neutral-800">
             {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
           </div>
 
+          <Card
+            id={`entry-${entry.id}`}
+            className={`group relative block gap-0 overflow-hidden border-none p-0 shadow-sm transition-all duration-300 hover:shadow-md scroll-mt-24 ${
+              isOwn ? "bg-card" : "bg-[#fdf2f8]"
+            }`}
+          >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <div className="flex items-center gap-2">
               <Avatar className="size-8 border-2 border-white/80">
@@ -252,7 +253,8 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               onImageClick={(index) => openLightbox(entry.images, index)}
             />
           )}
-        </Card>
+          </Card>
+        </div>
         )
       })}
 
