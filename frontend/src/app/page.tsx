@@ -207,7 +207,11 @@ export default function DiaryDashboard() {
             ) : activeView === "friends" ? (
               <FriendsExplorer token={token} />
             ) : (
-              <>
+              // Single-column mode caps and centers the lane so it reads at
+              // a normal feed width instead of stretching across whatever
+              // space the grid column leaves; full-width grid mode keeps
+              // using all of it.
+              <div className={feedLayout === "single" ? "mx-auto w-full max-w-2xl" : ""}>
                 <div className="mb-10">
                   <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
                 </div>
@@ -262,7 +266,7 @@ export default function DiaryDashboard() {
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
           </div>
 
