@@ -41,6 +41,12 @@ export default function DiaryDashboard() {
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [feedLayout, setFeedLayout] = useState<"grid" | "single">("grid")
+  // Single-column mode reserves a real right lane (for content added
+  // later); full-width grid mode instead docks a collapsed bar to the
+  // screen edge. Only relevant on the home feed — hashtags/friends don't
+  // have a layout toggle.
+  const showRightLane = activeView === "home" && feedLayout === "single"
+  const showRightBar = activeView === "home" && feedLayout === "grid"
   
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -175,8 +181,14 @@ export default function DiaryDashboard() {
         onViewChange={handleViewChange}
       />
 
-      <main className="mx-auto w-full max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[200px_minmax(0,1fr)]">
+      <main
+        className={`mx-auto w-full max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8 ${showRightBar ? "lg:pr-20" : ""}`}
+      >
+        <div
+          className={`grid grid-cols-1 gap-8 ${
+            showRightLane ? "lg:grid-cols-[200px_minmax(0,1fr)_280px]" : "lg:grid-cols-[200px_minmax(0,1fr)]"
+          }`}
+        >
           {/* Left: year/month timeline */}
           <DiaryTimelineSidebar entries={entries} />
 
@@ -253,8 +265,26 @@ export default function DiaryDashboard() {
               </>
             )}
           </div>
+
+          {/* Right lane: reserved for future content when the feed is
+              capped to a single reading-width column instead of spreading
+              full-width — empty skeleton for now. */}
+          {showRightLane && (
+            <div className="hidden lg:block">
+              <div className="sticky top-24 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                Coming soon
+              </div>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Collapsed right rail: what the right lane above becomes once the
+          feed spreads full-width again — a thin bar docked to the edge
+          instead of taking layout space. Empty skeleton for now. */}
+      {showRightBar && (
+        <div className="fixed top-16 right-0 bottom-0 z-30 hidden w-14 border-l border-border bg-card/80 backdrop-blur-sm lg:block" />
+      )}
 
       <Dialog open={isModalOpen} onOpenChange={(open) => {
         setIsModalOpen(open)
