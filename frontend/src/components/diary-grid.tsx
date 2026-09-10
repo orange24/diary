@@ -112,12 +112,18 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
       {entries.map((entry) => {
         const elements = entry.layout?.elements ?? []
         const isScrapbook = elements.length > 0
-        const imageOnlyElements = elements.filter((el) => el.type === "image")
-        // No writing anywhere on the page — just photo(s)/sticker(s) — so
-        // show them as a plain photo filling the card instead of the
-        // (mostly blank) scrapbook page they're placed on.
-        const isImageOnlyScrapbook = isScrapbook && imageOnlyElements.length > 0 && !hasVisibleText(elements)
-        const hasImages = entry.images && entry.images.length > 0
+        const canvasImageElements = elements.filter((el) => el.type === "image")
+        const hasImages = !!(entry.images && entry.images.length > 0)
+        // No writing anywhere — not on the canvas, and not in the legacy
+        // plain-text field either — so there's nothing for a text-oriented
+        // view to show. Canvas images (stickers/photos placed on the page)
+        // take priority when both exist; otherwise fall back to whatever
+        // was uploaded straight to the gallery (e.g. a blank page with
+        // just a gallery photo added, no canvas elements at all).
+        const legacyTextContent = entry.content?.replace(/<[^>]*>/g, "").trim() ?? ""
+        const hasWrittenText = hasVisibleText(elements) || legacyTextContent.length > 0
+        const imageOnlySrcs = canvasImageElements.length > 0 ? canvasImageElements.map((el) => el.src) : entry.images
+        const isImageOnly = !hasWrittenText && (canvasImageElements.length > 0 || hasImages)
         // A friend's entry merged into this feed (because it tags this
         // user) — never own unless currentUserId isn't known yet.
         const isOwn = currentUserId === undefined || entry.user_id === currentUserId
@@ -196,24 +202,25 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             {entry.created_date ? new Date(entry.created_date).toLocaleDateString() : ''}
           </div>
 
-          {isImageOnlyScrapbook ? (
-            // No writing on the page at all — show the photo(s) themselves
-            // filling the card edge-to-edge instead of the mostly-blank
-            // scrapbook page they sit on. Clicking opens the same
-            // full-screen lightbox as gallery photos, not the content
-            // viewer (there's no text for that dialog to help read).
-            imageOnlyElements.length === 1 ? (
+          {isImageOnly ? (
+            // No writing anywhere on this entry — show the photo(s)
+            // themselves filling the card edge-to-edge instead of an empty
+            // scrapbook page (or a blank content block sitting above the
+            // gallery). Clicking opens the same full-screen lightbox as
+            // gallery photos, not the content viewer — there's no text for
+            // that dialog to help read.
+            imageOnlySrcs.length === 1 ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={imageOnlyElements[0].src}
+                src={imageOnlySrcs[0]}
                 alt=""
                 className="block w-full h-auto cursor-pointer"
-                onClick={() => openLightbox([imageOnlyElements[0].src], 0)}
+                onClick={() => openLightbox(imageOnlySrcs, 0)}
               />
             ) : (
               <GalleryMosaic
-                images={imageOnlyElements.map((el) => el.src)}
-                onImageClick={(index) => openLightbox(imageOnlyElements.map((el) => el.src), index)}
+                images={imageOnlySrcs}
+                onImageClick={(index) => openLightbox(imageOnlySrcs, index)}
               />
             )
           ) : (
@@ -239,7 +246,10 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             </div>
           )}
 
-          {hasImages && (
+          {/* Canvas images already rendered above as the primary content
+              when isImageOnly, so only show the separate gallery block when
+              it's carrying photos distinct from what's already shown. */}
+          {!isImageOnly && hasImages && (
             <GalleryMosaic
               images={entry.images}
               onImageClick={(index) => openLightbox(entry.images, index)}
