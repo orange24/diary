@@ -1705,7 +1705,8 @@ git commit -m "Throw typed ApiError from services; add translate()/translateErro
 - Modify: `frontend/src/services/auth.ts`
 
 **Interfaces:**
-- Consumes: `DICTIONARIES`, `SUPPORTED_LOCALES`, `Locale` (Task 6); `translate` (Task 7);
+- Consumes: `DICTIONARIES`, `SUPPORTED_LOCALES`, `Locale` (Task 6); `translate`, `apiError`
+  (already imported into services/auth.ts by Task 7 — reused, not re-imported) (Task 7);
   `useAuth()` (existing)
 - Produces: `useLocale()` hook → `{ locale: Locale; setLocale: (l: Locale) => void; t: TFunction }`;
   `UserData.locale?: string` (auth-context.tsx); `updateLocale(locale, token)` and
