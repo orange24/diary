@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon } from "lucide-react"
+import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon, Check } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -15,14 +15,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { useLocale } from "@/context/locale-context"
+import { SUPPORTED_LOCALES } from "@/locales"
+
+const LOCALE_LABELS: Record<string, string> = { en: "English", th: "ไทย" }
 
 export type DiaryView = "home" | "hashtags" | "friends"
-
-const NAV_ITEMS: { view: DiaryView; label: string; icon: typeof Home }[] = [
-  { view: "home", label: "Home", icon: Home },
-  { view: "hashtags", label: "Hashtag", icon: Hash },
-  { view: "friends", label: "Friends", icon: Users },
-]
 
 interface DiaryHeaderProps {
   onLogout?: () => void
@@ -37,6 +35,12 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const isDark = theme === "dark"
+  const { locale, setLocale, t } = useLocale()
+  const navItems: { view: DiaryView; label: string; icon: typeof Home }[] = [
+    { view: "home", label: t("header.navHome"), icon: Home },
+    { view: "hashtags", label: t("header.navHashtag"), icon: Hash },
+    { view: "friends", label: t("header.navFriends"), icon: Users },
+  ]
 
   // สร้างชื่อย่อสำหรับ Avatar (เช่น Watchara Kittikum -> WK)
   const getInitials = (name?: string) => {
@@ -73,7 +77,7 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
         {/* Center: Home / Hashtag / Friends nav — plain spaced-out icons,
             Facebook-style, with an underline bar marking the active tab */}
         <nav className="flex h-full items-center gap-8 sm:gap-14">
-          {NAV_ITEMS.map(({ view, label, icon: Icon }) => (
+          {navItems.map(({ view, label, icon: Icon }) => (
             <button
               key={view}
               type="button"
@@ -109,18 +113,18 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
             <DropdownMenuContent className="w-56 mt-2 rounded-xl shadow-xl border-primary/10" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-bold leading-none">{userName || "Guest User"}</p>
+                  <p className="text-sm font-bold leading-none">{userName || t("header.guestUser")}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer font-medium">
                 <UserCog className="mr-2 size-4" />
-                <span>Edit Profile</span>
+                <span>{t("header.editProfile")}</span>
               </DropdownMenuItem>
               {userSlug && (
                 <DropdownMenuItem onClick={() => router.push(`/${userSlug}`)} className="cursor-pointer font-medium">
                   <User className="mr-2 size-4" />
-                  <span>My Public Profile</span>
+                  <span>{t("header.myPublicProfile")}</span>
                 </DropdownMenuItem>
               )}
               <DropdownMenuCheckboxItem
@@ -129,15 +133,29 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
                 className="cursor-pointer font-medium"
               >
                 <Moon className="mr-2 size-4" />
-                <span>Dark Mode</span>
+                <span>{t("header.darkMode")}</span>
               </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                {t("header.language")}
+              </DropdownMenuLabel>
+              {SUPPORTED_LOCALES.map((code) => (
+                <DropdownMenuItem
+                  key={code}
+                  onClick={() => setLocale(code)}
+                  className="cursor-pointer font-medium"
+                >
+                  <Check className={`mr-2 size-4 ${locale === code ? "opacity-100" : "opacity-0"}`} />
+                  <span>{LOCALE_LABELS[code] ?? code}</span>
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onLogout}
                 className="text-destructive focus:text-destructive cursor-pointer font-medium"
               >
                 <LogOut className="mr-2 size-4" />
-                <span>Log out</span>
+                <span>{t("header.logout")}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
