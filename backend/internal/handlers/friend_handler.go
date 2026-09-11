@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"diary_app/backend/internal/apierr"
 	"github.com/gin-gonic/gin"
 )
 
@@ -60,7 +62,8 @@ func (h *EntryHandler) SearchUsers(c *gin.Context) {
 
 	rows, err := h.DB.Query(query, userID, like)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("SearchUsers error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 	defer rows.Close()
@@ -72,7 +75,8 @@ func (h *EntryHandler) SearchUsers(c *gin.Context) {
 		var status sql.NullString
 		var requesterID sql.NullInt64
 		if err := rows.Scan(&r.ID, &r.Username, &r.FullName, &r.ProfilePicture, &friendshipID, &status, &requesterID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("SearchUsers error: %v", err)
+			apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 			return
 		}
 
@@ -109,7 +113,8 @@ func (h *EntryHandler) ListFriends(c *gin.Context) {
 
 	rows, err := h.DB.Query(query, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("ListFriends error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 	defer rows.Close()
@@ -118,7 +123,8 @@ func (h *EntryHandler) ListFriends(c *gin.Context) {
 	for rows.Next() {
 		var f FriendListItem
 		if err := rows.Scan(&f.FriendshipID, &f.ID, &f.Username, &f.FullName, &f.ProfilePicture); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("ListFriends error: %v", err)
+			apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 			return
 		}
 		friends = append(friends, f)
@@ -145,7 +151,8 @@ func (h *EntryHandler) ListFriendRequests(c *gin.Context) {
 
 	rows, err := h.DB.Query(query, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("ListFriendRequests error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 	defer rows.Close()
@@ -155,7 +162,8 @@ func (h *EntryHandler) ListFriendRequests(c *gin.Context) {
 		var req FriendRequestItem
 		var createdDate time.Time
 		if err := rows.Scan(&req.ID, &req.Direction, &req.User.ID, &req.User.Username, &req.User.FullName, &req.User.ProfilePicture, &createdDate); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("ListFriendRequests error: %v", err)
+			apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 			return
 		}
 		requests = append(requests, req)
@@ -174,11 +182,11 @@ func (h *EntryHandler) SendFriendRequest(c *gin.Context) {
 
 	var input sendFriendRequestInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		apierr.JSON(c, http.StatusBadRequest, apierr.ValidationFailed, err.Error())
 		return
 	}
 	if input.AddresseeID == userID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot friend yourself"})
+		apierr.JSON(c, http.StatusBadRequest, apierr.CannotFriendSelf, "Cannot friend yourself")
 		return
 	}
 
@@ -194,23 +202,25 @@ func (h *EntryHandler) SendFriendRequest(c *gin.Context) {
 	if err == nil {
 		// A row already exists between these two users.
 		if existingStatus == "accepted" {
-			c.JSON(http.StatusConflict, gin.H{"error": "Already friends"})
+			apierr.JSON(c, http.StatusConflict, apierr.AlreadyFriends, "Already friends")
 			return
 		}
 		if existingRequesterID == userID {
-			c.JSON(http.StatusConflict, gin.H{"error": "Friend request already sent"})
+			apierr.JSON(c, http.StatusConflict, apierr.FriendRequestSent, "Friend request already sent")
 			return
 		}
 		// They requested us first — accept it instead of duplicating.
 		if _, err := h.DB.Exec(`UPDATE friendships SET status = 'accepted' WHERE id = $1`, existingID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("SendFriendRequest error: %v", err)
+			apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"id": existingID, "status": "accepted"})
 		return
 	}
 	if err != sql.ErrNoRows {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("SendFriendRequest error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 
@@ -220,7 +230,8 @@ func (h *EntryHandler) SendFriendRequest(c *gin.Context) {
 		userID, input.AddresseeID,
 	).Scan(&newID)
 	if insertErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": insertErr.Error()})
+		log.Printf("SendFriendRequest error: %v", insertErr)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": newID, "status": "pending"})
@@ -231,7 +242,7 @@ func (h *EntryHandler) AcceptFriendRequest(c *gin.Context) {
 	userID := c.MustGet("user_id").(int)
 	friendshipID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid friendship id"})
+		apierr.JSON(c, http.StatusBadRequest, apierr.InvalidFriendshipID, "Invalid friendship id")
 		return
 	}
 
@@ -240,11 +251,12 @@ func (h *EntryHandler) AcceptFriendRequest(c *gin.Context) {
 		friendshipID, userID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("AcceptFriendRequest error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 	if rows, _ := result.RowsAffected(); rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
+		apierr.JSON(c, http.StatusNotFound, apierr.RequestNotFound, "Request not found")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Friend request accepted"})
@@ -256,7 +268,7 @@ func (h *EntryHandler) RemoveFriendship(c *gin.Context) {
 	userID := c.MustGet("user_id").(int)
 	friendshipID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid friendship id"})
+		apierr.JSON(c, http.StatusBadRequest, apierr.InvalidFriendshipID, "Invalid friendship id")
 		return
 	}
 
@@ -265,11 +277,12 @@ func (h *EntryHandler) RemoveFriendship(c *gin.Context) {
 		friendshipID, userID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("RemoveFriendship error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 	if rows, _ := result.RowsAffected(); rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Friendship not found"})
+		apierr.JSON(c, http.StatusNotFound, apierr.FriendshipNotFound, "Friendship not found")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Removed"})
