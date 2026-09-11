@@ -2,6 +2,7 @@
 package middleware
 
 import (
+	"diary_app/backend/internal/apierr"
 	"diary_app/backend/internal/utils"
 	"net/http"
 	"strings"
@@ -12,7 +13,7 @@ import (
 func AuthMiddleware(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		apierr.JSON(c, http.StatusUnauthorized, apierr.Unauthorized, "Unauthorized")
 		c.Abort() // หยุดการทำงานทันที
 		return
 	}
@@ -20,7 +21,7 @@ func AuthMiddleware(c *gin.Context) {
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 	userID, err := utils.ValidateToken(tokenStr)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		apierr.JSON(c, http.StatusUnauthorized, apierr.InvalidToken, "Invalid token")
 		c.Abort()
 		return
 	}
