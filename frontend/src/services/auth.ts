@@ -53,6 +53,7 @@ export interface ProfileData {
   profile_picture: string;
   // Public profile page slug (/<slug>) — server-generated, read-only.
   slug: string;
+  locale: string;
 }
 
 export const getProfile = async (token: string): Promise<ProfileData> => {
@@ -77,6 +78,19 @@ export const updateProfile = async (data: ProfileUpdate, token: string) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw apiError(errorData, 'Failed to update profile');
+  }
+  return response.json();
+};
+
+export const updateLocale = async (locale: string, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/profile/locale`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ locale }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw apiError(errorData, 'Failed to update language');
   }
   return response.json();
 };

@@ -9,6 +9,9 @@ interface UserData {
   profile_picture?: string;
   // Public profile page slug (/<slug>) — server-generated, read-only.
   slug?: string;
+  // UI language preference, synced from the account. Undefined for a
+  // brand-new user who hasn't picked one yet.
+  locale?: string;
 }
 
 interface AuthContextType {

@@ -3,6 +3,7 @@ import { Prompt } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Metadata } from "next";
 import { AuthProvider } from "@/context/auth-context"
+import { LocaleProvider } from "@/context/locale-context"
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner"
 
@@ -29,14 +30,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
 
           <AuthProvider>
-            <ThemeProvider
-              attribute="data-theme"
-              defaultTheme="light"
-              enableSystem={false}
-            >
-              {children}
-              <Toaster position="top-center" richColors />
-            </ThemeProvider>
+            <LocaleProvider>
+              <ThemeProvider
+                attribute="data-theme"
+                defaultTheme="light"
+                enableSystem={false}
+              >
+                {children}
+                <Toaster position="top-center" richColors />
+              </ThemeProvider>
+            </LocaleProvider>
           </AuthProvider>
         </body>
     </html>
