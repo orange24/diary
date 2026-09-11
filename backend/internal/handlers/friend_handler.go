@@ -10,9 +10,10 @@ import (
 )
 
 type FriendUser struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	FullName string `json:"full_name"`
+	ID             int    `json:"id"`
+	Username       string `json:"username"`
+	FullName       string `json:"full_name"`
+	ProfilePicture string `json:"profile_picture"`
 }
 
 type FriendRequestItem struct {
@@ -44,7 +45,7 @@ func (h *EntryHandler) SearchUsers(c *gin.Context) {
 	like := "%" + q + "%"
 
 	query := `
-		SELECT u.id, u.username, COALESCE(u.full_name, ''), f.id, f.status, f.requester_id
+		SELECT u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.profile_picture, ''), f.id, f.status, f.requester_id
 		FROM users u
 		LEFT JOIN friendships f
 			ON (f.requester_id = u.id AND f.addressee_id = $1)
@@ -66,7 +67,7 @@ func (h *EntryHandler) SearchUsers(c *gin.Context) {
 		var friendshipID sql.NullInt64
 		var status sql.NullString
 		var requesterID sql.NullInt64
-		if err := rows.Scan(&r.ID, &r.Username, &r.FullName, &friendshipID, &status, &requesterID); err != nil {
+		if err := rows.Scan(&r.ID, &r.Username, &r.FullName, &r.ProfilePicture, &friendshipID, &status, &requesterID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -96,7 +97,7 @@ func (h *EntryHandler) ListFriends(c *gin.Context) {
 	userID := c.MustGet("user_id").(int)
 
 	query := `
-		SELECT f.id, u.id, u.username, COALESCE(u.full_name, '')
+		SELECT f.id, u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.profile_picture, '')
 		FROM friendships f
 		JOIN users u ON u.id = CASE WHEN f.requester_id = $1 THEN f.addressee_id ELSE f.requester_id END
 		WHERE (f.requester_id = $1 OR f.addressee_id = $1) AND f.status = 'accepted'
@@ -112,7 +113,7 @@ func (h *EntryHandler) ListFriends(c *gin.Context) {
 	friends := []FriendListItem{}
 	for rows.Next() {
 		var f FriendListItem
-		if err := rows.Scan(&f.FriendshipID, &f.ID, &f.Username, &f.FullName); err != nil {
+		if err := rows.Scan(&f.FriendshipID, &f.ID, &f.Username, &f.FullName, &f.ProfilePicture); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -127,7 +128,7 @@ func (h *EntryHandler) ListFriendRequests(c *gin.Context) {
 	userID := c.MustGet("user_id").(int)
 
 	query := `
-		SELECT f.id, u.id, u.username, COALESCE(u.full_name, '')
+		SELECT f.id, u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.profile_picture, '')
 		FROM friendships f
 		JOIN users u ON u.id = f.requester_id
 		WHERE f.addressee_id = $1 AND f.status = 'pending'
@@ -143,7 +144,7 @@ func (h *EntryHandler) ListFriendRequests(c *gin.Context) {
 	requests := []FriendRequestItem{}
 	for rows.Next() {
 		var req FriendRequestItem
-		if err := rows.Scan(&req.ID, &req.Requester.ID, &req.Requester.Username, &req.Requester.FullName); err != nil {
+		if err := rows.Scan(&req.ID, &req.Requester.ID, &req.Requester.Username, &req.Requester.FullName, &req.Requester.ProfilePicture); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

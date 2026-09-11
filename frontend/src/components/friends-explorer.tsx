@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { Check, Search, UserMinus, UserPlus, X } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -40,16 +40,19 @@ function getInitials(name: string) {
 function PersonRow({
   name,
   username,
+  avatarUrl,
   action,
 }: {
   name: string
   username: string
+  avatarUrl?: string
   action: React.ReactNode
 }) {
   return (
     <li className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
       <div className="flex min-w-0 items-center gap-3">
         <Avatar className="size-10 shrink-0 border-2 border-primary/10">
+          {avatarUrl && <AvatarImage src={avatarUrl} alt={name || username} />}
           <AvatarFallback className="bg-primary/5 text-xs font-bold text-primary">
             {getInitials(name || username)}
           </AvatarFallback>
@@ -184,6 +187,7 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
                 key={f.friendship_id}
                 name={f.full_name}
                 username={f.username}
+                avatarUrl={f.profile_picture}
                 action={
                   <Button
                     variant="ghost"
@@ -209,6 +213,7 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
                 key={r.id}
                 name={r.requester.full_name}
                 username={r.requester.username}
+                avatarUrl={r.requester.profile_picture}
                 action={
                   <div className="flex gap-2">
                     <Button
@@ -254,6 +259,7 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
                   key={r.id}
                   name={r.full_name}
                   username={r.username}
+                  avatarUrl={r.profile_picture}
                   action={
                     r.relationship === "friends" ? (
                       <span className="text-sm font-medium text-muted-foreground">Already friends</span>
