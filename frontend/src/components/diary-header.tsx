@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon, Check } from "lucide-react"
+import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon, Check, Eye } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -20,7 +20,7 @@ import { SUPPORTED_LOCALES } from "@/locales"
 
 const LOCALE_LABELS: Record<string, string> = { en: "English", th: "ไทย" }
 
-export type DiaryView = "home" | "hashtags" | "friends"
+export type DiaryView = "home" | "hashtags" | "friends" | "nosy"
 
 interface DiaryHeaderProps {
   onLogout?: () => void
@@ -40,6 +40,7 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
     { view: "home", label: t("header.navHome"), icon: Home },
     { view: "hashtags", label: t("header.navHashtag"), icon: Hash },
     { view: "friends", label: t("header.navFriends"), icon: Users },
+    { view: "nosy", label: t("header.navNosy"), icon: Eye },
   ]
 
   // สร้างชื่อย่อสำหรับ Avatar (เช่น Watchara Kittikum -> WK)

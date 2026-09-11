@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, Lock, Users, Globe, User } from "lucide-react"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, Lock, Users, Globe, User, Eye } from "lucide-react"
 import { Entry, EntryAudience } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
@@ -170,11 +170,20 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               Everything else (author, audience, the 3-dot menu) stays out
               of the card's way by default so it reads as pure content,
               surfacing on the right only on hover. */}
-          <div className="mb-1.5 flex items-center gap-1 text-[14px] text-[#9b9b9b]">
-            {entry.audience === "public" && <Globe className="size-3.5 text-blue-500" />}
-            {entry.audience === "friend" && <Users className="size-3.5 text-blue-300" />}
-            {entry.audience === "private" && <Lock className="size-3.5 text-pink-300" />}
-            {formatEntryDate(entry.created_date, t, locale)}
+          <div className="mb-1.5 flex items-center justify-between gap-1 text-[14px] text-[#9b9b9b]">
+            <div className="flex items-center gap-1">
+              {entry.audience === "public" && <Globe className="size-3.5 text-blue-500" />}
+              {entry.audience === "friend" && <Users className="size-3.5 text-blue-300" />}
+              {entry.audience === "private" && <Lock className="size-3.5 text-pink-300" />}
+              {formatEntryDate(entry.created_date, t, locale)}
+            </div>
+            {/* Only Nosy-feed entries carry a view_count — home-feed entries
+                never do, so this badge is naturally absent everywhere else. */}
+            {entry.view_count !== undefined && (
+              <span className="flex items-center gap-1 text-xs">
+                <Eye className="size-3.5" /> {entry.view_count}
+              </span>
+            )}
           </div>
 
           <Card

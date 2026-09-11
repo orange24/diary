@@ -15,7 +15,7 @@ import { LayoutGrid, Rows3 } from "lucide-react"
 import { extractHashtags } from "@/lib/hashtags"
 import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BookDialogContent } from "@/components/book-dialog-content"
-import { getEntries, getEntry, deleteEntry, Entry } from "@/services/api"
+import { getEntries, getEntry, deleteEntry, getNosyFeed, Entry } from "@/services/api"
 import { useAuth } from "@/context/auth-context"
 import { useLocale } from "@/context/locale-context"
 import { toast } from "sonner"
@@ -79,8 +79,37 @@ export default function DiaryDashboard() {
   
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const { ref, inView } = useInView({ threshold: 0 })
+
+  // Nosy mode: other users' public entries, its own separate feed/pagination
+  // state since it's never mixed with the home feed's `entries`.
+  const [nosyEntries, setNosyEntries] = useState<Entry[]>([])
+  const [nosyPage, setNosyPage] = useState(1)
+  const [nosyHasMore, setNosyHasMore] = useState(true)
+  const [nosyLoading, setNosyLoading] = useState(false)
+  const { ref: nosyRef, inView: nosyInView } = useInView({ threshold: 0 })
+
+  const loadMoreNosyEntries = useCallback(async () => {
+    if (!token || nosyLoading || !nosyHasMore) return
+    setNosyLoading(true)
+    try {
+      const response = await getNosyFeed(nosyPage, 10, token)
+      if (response.length < 10) setNosyHasMore(false)
+      setNosyEntries((prev) => [...prev, ...response])
+      setNosyPage((p) => p + 1)
+    } catch (error) {
+      console.error("Nosy feed load error:", error)
+    } finally {
+      setNosyLoading(false)
+    }
+  }, [token, nosyPage, nosyHasMore, nosyLoading])
+
+  useEffect(() => {
+    if (nosyInView && nosyHasMore && token && !nosyLoading) {
+      loadMoreNosyEntries()
+    }
+  }, [nosyInView, nosyHasMore, token, nosyLoading, loadMoreNosyEntries])
 
   // --- 1. Security Check ---
   useEffect(() => {
@@ -236,6 +265,41 @@ export default function DiaryDashboard() {
               />
             ) : activeView === "friends" ? (
               <FriendsExplorer token={token} />
+            ) : activeView === "nosy" ? (
+              <div className="mx-auto w-full max-w-2xl">
+                <div className="mb-10">
+                  <p className="text-muted-foreground">{t("dashboard.nosyIntro")}</p>
+                </div>
+
+                {nosyEntries.length === 0 && !nosyHasMore ? (
+                  <p className="py-16 text-center text-muted-foreground">{t("dashboard.nosyEmpty")}</p>
+                ) : (
+                  <DiaryGrid
+                    entries={nosyEntries}
+                    currentUserId={user?.userId}
+                    onHashtagClick={openHashtag}
+                    layout="single"
+                  />
+                )}
+
+                <div ref={nosyRef} className="py-16 text-center flex flex-col items-center justify-center">
+                  {nosyLoading && (
+                    <div className="flex gap-2">
+                      <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce"></div>
+                      <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                      <div className="w-3 h-3 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    </div>
+                  )}
+                  {!nosyHasMore && nosyEntries.length > 0 && (
+                    <div className="w-full flex flex-col items-center gap-4">
+                      <div className="h-px w-24 bg-border" />
+                      <p className="text-muted-foreground text-sm font-medium italic">
+                        {t("dashboard.endOfMemories")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : (
               // Single-column mode caps and centers the lane so it reads at
               // a normal feed width instead of stretching across whatever

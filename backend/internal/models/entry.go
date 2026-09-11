@@ -25,4 +25,7 @@ type Entry struct {
 	// The author's profile slug (only populated by GetEntries), used to
 	// link the feed card's author name to their public profile page.
 	CreatedBySlug string `json:"created_by_slug,omitempty"`
+	// Unique-viewer count from entry_views — only populated by GetNosyFeed,
+	// which is also the only place that ever writes to entry_views.
+	ViewCount int `json:"view_count,omitempty"`
 }

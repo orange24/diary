@@ -29,6 +29,9 @@ export interface Entry {
   // The author's public profile slug, used to link their name in the feed
   // card to /<slug>. Only populated by getEntries.
   created_by_slug?: string;
+  // Unique-viewer count. Only populated by getNosyFeed — home-feed entries
+  // never carry it, which is what tells a card whether to show the badge.
+  view_count?: number;
 }
 
 export interface PublicProfile {
@@ -84,6 +87,31 @@ export const getEntries = async (page: number, limit: number, token: string): Pr
   } catch (error) {
     console.error("Network Error:", error);
     return []; // 👈 กันพัง
+  }
+}
+
+// "Nosy mode" — other users' public entries, ranked by unique-viewer count
+// then recency. Fetching a page also records this viewer against every
+// entry on it server-side (see backend's GetNosyFeed) — there's no
+// separate "mark as viewed" call.
+export const getNosyFeed = async (page: number, limit: number, token: string): Promise<Entry[]> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/nosy?page=${page}&limit=${limit}`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      console.error("API Error Status:", res.status);
+      return [];
+    }
+
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Network Error:", error);
+    return [];
   }
 }
 

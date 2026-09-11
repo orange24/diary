@@ -14,6 +14,7 @@ const th: Dictionary = {
     navHome: "หน้าแรก",
     navHashtag: "แฮชแท็ก",
     navFriends: "เพื่อน",
+    navNosy: "เสือก",
     guestUser: "ผู้เยี่ยมชม",
   },
   dashboard: {
@@ -25,6 +26,8 @@ const th: Dictionary = {
     newEntryTitle: "บันทึกใหม่",
     editMemoryTitle: "✨ แก้ไขความทรงจำ",
     endOfMemories: "คุณมาถึงความทรงจำสุดท้ายแล้ว",
+    nosyIntro: "บันทึกสาธารณะจากคนอื่น เรียงตามคนดูเยอะที่สุดก่อน",
+    nosyEmpty: "ยังไม่มีใครโพสต์แบบสาธารณะเลย ลองกลับมาดูใหม่นะ!",
     deleteEntryTitle: "ลบบันทึกนี้ใช่ไหม?",
     deleteEntryDescription: "บันทึกนี้จะถูกลบออกจากไทม์ไลน์ของคุณอย่างถาวร คุณแน่ใจหรือไม่ว่าต้องการลบ?",
     deleteEntryCancel: "ไม่ลบ ฉันเปลี่ยนใจ",

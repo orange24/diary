@@ -109,6 +109,69 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	c.JSON(200, entries)
 }
 
+// 1b. GetNosyFeed: public entries from OTHER users, ranked by unique-viewer
+// count then by most recent update — "nosy mode". Viewing a page of results
+// also records this viewer against every entry on it (entry_views, deduped
+// by primary key), which is what makes the ranking possible in the first
+// place: there's no separate "mark as viewed" endpoint, appearing in this
+// feed IS the view.
+func (h *EntryHandler) GetNosyFeed(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	userID := c.MustGet("user_id")
+
+	query := `SELECT e.id, e.title, e.content, to_char(e.created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id, COALESCE(u.profile_picture, ''), COALESCE(u.slug, ''), COALESCE(v.view_count, 0)
+			  FROM entries e
+			  LEFT JOIN users u ON u.id = e.user_id
+			  LEFT JOIN (
+			    SELECT entry_id, COUNT(*) AS view_count FROM entry_views GROUP BY entry_id
+			  ) v ON v.entry_id = e.id
+			  WHERE e.audience = 'public' AND e.user_id != $1
+			  ORDER BY COALESCE(v.view_count, 0) DESC, e.updated_at DESC
+			  LIMIT $2 OFFSET $3`
+
+	rows, err := h.DB.Query(query, userID, limit, offset)
+	if err != nil {
+		log.Printf("GetNosyFeed query error: %v", err)
+		apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
+		return
+	}
+	defer rows.Close()
+
+	var entries []models.Entry = []models.Entry{}
+	for rows.Next() {
+		var e models.Entry
+		var layoutStr sql.NullString
+		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID, &e.CreatedByAvatar, &e.CreatedBySlug, &e.ViewCount)
+		if err != nil {
+			log.Printf("GetNosyFeed scan error: %v", err)
+			apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
+			return
+		}
+		if layoutStr.Valid {
+			e.Layout = json.RawMessage(layoutStr.String)
+		}
+		entries = append(entries, e)
+	}
+
+	// Record this page as viewed by this user. Best-effort: a failure here
+	// shouldn't turn a successful feed load into an error response, since
+	// the view record is a side effect of reading, not the point of the
+	// request.
+	for _, e := range entries {
+		if _, err := h.DB.Exec(
+			"INSERT INTO entry_views (entry_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+			e.ID, userID,
+		); err != nil {
+			log.Printf("GetNosyFeed view-record error (entry %d): %v", e.ID, err)
+		}
+	}
+
+	c.JSON(200, entries)
+}
+
 // 2. CreateEntry: ผูก user_id ตอนสร้าง
 func (h *EntryHandler) CreateEntry(c *gin.Context) {
 	var input models.Entry
@@ -192,7 +255,7 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 		createdDateParam = input.CreatedDate
 	}
 
-	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb, audience = $6, created_date = COALESCE($7, created_date)
+	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb, audience = $6, created_date = COALESCE($7, created_date), updated_at = CURRENT_TIMESTAMP
 			  WHERE id = $8 AND user_id = $9`
 	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, input.Audience, createdDateParam, id, userID)
 
