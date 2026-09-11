@@ -71,7 +71,12 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 		args = append(args, "@"+regexp.QuoteMeta(username)+`\y`)
 	}
 
-	query := `SELECT e.id, e.title, e.content, e.created_date, COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id, COALESCE(u.profile_picture, ''), COALESCE(u.slug, '')
+	// created_date is a "timestamp without time zone" (a naive wall-clock
+	// value, no zone attached) — reading it back through Go's time.Time
+	// would silently stamp it as UTC and shift it when the frontend
+	// re-parses it as local time. to_char keeps it a plain string so the
+	// literal value the user entered round-trips unchanged.
+	query := `SELECT e.id, e.title, e.content, to_char(e.created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id, COALESCE(u.profile_picture, ''), COALESCE(u.slug, '')
 			  FROM entries e
 			  LEFT JOIN users u ON u.id = e.user_id
 			  WHERE e.user_id = $1` + mergeFriendsClause + `
@@ -126,7 +131,8 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 
 	// เพิ่ม user_id และ layout ลงใน INSERT query
 	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout, audience, created_date)
-              VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, COALESCE($8, CURRENT_TIMESTAMP)) RETURNING id, created_date`
+              VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, COALESCE($8, CURRENT_TIMESTAMP))
+              RETURNING id, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS')`
 
 	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam, input.Audience, createdDateParam).
 		Scan(&input.ID, &input.CreatedDate)
@@ -205,7 +211,7 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 	userID := c.MustGet("user_id")
 	var e models.Entry
 
-	query := `SELECT id, title, content, created_date, created_by, images, layout, audience
+	query := `SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), created_by, images, layout, audience
 			  FROM entries WHERE id = $1 AND user_id = $2`
 	var layoutStr sql.NullString
 	err := h.DB.QueryRow(query, id, userID).

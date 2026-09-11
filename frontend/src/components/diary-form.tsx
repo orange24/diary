@@ -26,6 +26,14 @@ function toDateInputValue(date: Date): string {
   return local.toISOString().slice(0, 10)
 }
 
+// Formats a Date as the "HH:mm" an <input type="time"> needs, in the
+// browser's local timezone.
+function toTimeInputValue(date: Date): string {
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+  return `${hours}:${minutes}`
+}
+
 interface DiaryFormProps {
   onSuccess: () => void;
   initialData?: Entry | null;
@@ -63,6 +71,9 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
   const [createdDate, setCreatedDate] = useState<string>(() =>
     toDateInputValue(initialData?.created_date ? new Date(initialData.created_date) : new Date())
   )
+  const [createdTime, setCreatedTime] = useState<string>(() =>
+    toTimeInputValue(initialData?.created_date ? new Date(initialData.created_date) : new Date())
+  )
 
   useEffect(() => {
     if (!token) return
@@ -84,7 +95,9 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
     )
     setGalleryImages((initialData?.images || []).filter((src) => !canvasSrcs.has(src)))
     setAudience(initialData?.audience ?? "private")
-    setCreatedDate(toDateInputValue(initialData?.created_date ? new Date(initialData.created_date) : new Date()))
+    const initialDateObj = initialData?.created_date ? new Date(initialData.created_date) : new Date()
+    setCreatedDate(toDateInputValue(initialDateObj))
+    setCreatedTime(toTimeInputValue(initialDateObj))
   }, [initialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +120,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         created_by: "Watchara",
         layout: { pageWidth: PAGE_WIDTH, elements },
         audience,
-        created_date: createdDate,
+        created_date: `${createdDate}T${createdTime}:00`,
       };
 
       if (initialData?.id) {
@@ -127,13 +140,21 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pt-4">
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">Date</label>
-        <Input
-          type="date"
-          value={createdDate}
-          onChange={(e) => setCreatedDate(e.target.value)}
-          className="w-full rounded-xl"
-        />
+        <label className="text-sm font-semibold text-foreground">Date &amp; Time</label>
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            type="date"
+            value={createdDate}
+            onChange={(e) => setCreatedDate(e.target.value)}
+            className="w-full rounded-xl"
+          />
+          <Input
+            type="time"
+            value={createdTime}
+            onChange={(e) => setCreatedTime(e.target.value)}
+            className="w-full rounded-xl"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

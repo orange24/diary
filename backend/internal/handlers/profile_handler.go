@@ -77,7 +77,7 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 	}
 
 	rows, err := h.DB.Query(
-		`SELECT id, title, content, created_date, COALESCE(created_by, ''), images, layout, audience, user_id
+		`SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(created_by, ''), images, layout, audience, user_id
 		 FROM entries WHERE user_id = $1`+audienceFilter+`
 		 ORDER BY id DESC`,
 		p.ID,
