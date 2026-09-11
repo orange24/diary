@@ -53,15 +53,22 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
     <header className="sticky top-0 z-40 w-full bg-logo border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
-        {/* Left Side: Logo & Title */}
-        <div className="flex items-center gap-3">
+        {/* Left Side: Logo & Title — clicking it returns to the home feed */}
+        <button
+          type="button"
+          onClick={() => {
+            onViewChange("home")
+            router.push("/")
+          }}
+          className="flex items-center gap-3"
+        >
           <div className="flex items-center justify-center size-10 rounded-xl bg-white shadow-lg">
             <BookOpen className="size-5 text-logo" />
           </div>
           <h1 className="text-xl font-bold tracking-tight uppercase text-white hidden md:block">
             Papymory
           </h1>
-        </div>
+        </button>
 
         {/* Center: Home / Hashtag / Friends nav — plain spaced-out icons,
             Facebook-style, with an underline bar marking the active tab */}
