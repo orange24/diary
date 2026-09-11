@@ -168,7 +168,8 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               Everything else (author, audience, the 3-dot menu) stays out
               of the card's way by default so it reads as pure content,
               surfacing on the right only on hover. */}
-          <div className="mb-1.5 text-[14px] text-[#9b9b9b]">
+          <div className="mb-1.5 flex items-center gap-1 text-[14px] text-[#9b9b9b]">
+            {entry.audience === "public" && <Globe className="size-3.5 text-blue-300" />}
             {formatEntryDate(entry.created_date)}
           </div>
 
