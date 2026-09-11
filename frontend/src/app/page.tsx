@@ -266,9 +266,22 @@ export default function DiaryDashboard() {
             ) : activeView === "friends" ? (
               <FriendsExplorer token={token} />
             ) : activeView === "nosy" ? (
-              <div className="mx-auto w-full max-w-2xl">
-                <div className="mb-10">
+              <div className={feedLayout === "single" ? "mx-auto w-full max-w-2xl" : ""}>
+                <div className="mb-3 flex items-center justify-between gap-4">
                   <p className="text-muted-foreground">{t("dashboard.nosyIntro")}</p>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={feedLayout}
+                    onValueChange={(value) => value && setFeedLayout(value as "grid" | "single")}
+                  >
+                    <ToggleGroupItem value="grid" aria-label={t("dashboard.masonryLayout")} title={t("dashboard.masonryLayout")}>
+                      <LayoutGrid className="size-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="single" aria-label={t("dashboard.singleColumnLayout")} title={t("dashboard.singleColumnLayout")}>
+                      <Rows3 className="size-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
                 </div>
 
                 {nosyEntries.length === 0 && !nosyHasMore ? (
@@ -278,7 +291,7 @@ export default function DiaryDashboard() {
                     entries={nosyEntries}
                     currentUserId={user?.userId}
                     onHashtagClick={openHashtag}
-                    layout="single"
+                    layout={feedLayout}
                   />
                 )}
 
