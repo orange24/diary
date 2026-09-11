@@ -1,4 +1,6 @@
 // ใช้สไตล์ที่คุณถนัด (Fetch API หรือ Axios)
+import { apiError } from "@/lib/api-error";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const login = async (username: string, password: string) => {
@@ -10,8 +12,8 @@ export const login = async (username: string, password: string) => {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Login failed');
+            const errorData = await response.json().catch(() => ({}));
+            throw apiError(errorData, 'Login failed');
         }
 
      return response.json(); // จะได้รับ { "token": "..." }
@@ -30,9 +32,8 @@ export const register = async (userData: any) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    // ดึง Error message ที่ส่งมาจาก Go (gin.H) มาแสดง
-    throw new Error(errorData.error || 'Registration failed');
+    const errorData = await response.json().catch(() => ({}));
+    throw apiError(errorData, 'Registration failed');
   }
 
   return response.json();
@@ -60,7 +61,7 @@ export const getProfile = async (token: string): Promise<ProfileData> => {
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to load profile');
+    throw apiError(errorData, 'Failed to load profile');
   }
   return response.json();
 };
@@ -75,7 +76,7 @@ export const updateProfile = async (data: ProfileUpdate, token: string) => {
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to update profile');
+    throw apiError(errorData, 'Failed to update profile');
   }
   return response.json();
 };

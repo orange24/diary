@@ -1,6 +1,7 @@
 // frontend/src/services/api.ts
 
 import { ScrapbookLayout } from "@/types/scrapbook";
+import { apiError } from "@/lib/api-error";
 
 // ✅ แก้ไขพอร์ตให้ตรงกับ Docker (9090)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090";
@@ -57,7 +58,7 @@ export const getPublicProfile = async (slug: string, token: string): Promise<Pub
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || "Failed to load profile");
+    throw apiError(errorData, "Failed to load profile");
   }
   return res.json();
 };
@@ -93,7 +94,10 @@ export const getEntry = async (id: number, token: string): Promise<Entry> => {
       "Authorization": `Bearer ${token}`
     }
   });
-  if (!response.ok) throw new Error(`Failed to fetch entry: ${response.status}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw apiError(errorData, `Failed to fetch entry: ${response.status}`);
+  }
   return response.json();
 };
 
@@ -107,7 +111,10 @@ export const createEntry = async (data: any, token: string): Promise<any> => {
     },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error("Failed to create entry");
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw apiError(errorData, "Failed to create entry");
+  }
   return response.json();
 };
 
@@ -121,7 +128,10 @@ export const updateEntry = async (id: number, data: any, token: string): Promise
     },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error("Failed to update entry");
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw apiError(errorData, "Failed to update entry");
+  }
   return response.json();
 };
 
@@ -133,6 +143,9 @@ export const deleteEntry = async (id: number, token: string): Promise<any> => {
       "Authorization": `Bearer ${token}`
     }
   });
-  if (!response.ok) throw new Error("Failed to delete");
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw apiError(errorData, "Failed to delete");
+  }
   return response.json();
 };

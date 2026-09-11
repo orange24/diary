@@ -1,3 +1,5 @@
+import { apiError } from "@/lib/api-error"
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090"
 
 export interface FriendUser {
@@ -36,7 +38,7 @@ async function authFetch(path: string, token: string, options: RequestInit = {})
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new Error(data.error || `Request failed (${res.status})`)
+    throw apiError(data, `Request failed (${res.status})`)
   }
   return res.json()
 }
