@@ -17,6 +17,7 @@ import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BookDialogContent } from "@/components/book-dialog-content"
 import { getEntries, getEntry, deleteEntry, Entry } from "@/services/api"
 import { useAuth } from "@/context/auth-context"
+import { useLocale } from "@/context/locale-context"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ import {
 
 export default function DiaryDashboard() {
   const { token, handleLogout, user, isLoading } = useAuth()
+  const { t } = useLocale()
   const router = useRouter()
   
   const [activeView, setActiveView] = useState<DiaryView>("home")
@@ -170,7 +172,7 @@ export default function DiaryDashboard() {
       setEntries((prev) => prev.filter((e) => e.id !== deleteId));
       setDeleteId(null); 
     } catch (error) {
-      alert("Delete failed");
+      alert(t("dashboard.deleteFailedAlert"));
     } finally {
       setIsDeleting(false);
     }
@@ -183,7 +185,7 @@ export default function DiaryDashboard() {
       setSelectedEntry(entry)
       setIsModalOpen(true)
     } catch (error) {
-      alert("Couldn't load the entry for editing.")
+      alert(t("dashboard.editEntryLoadFailedAlert"))
     }
   }
 
@@ -239,7 +241,7 @@ export default function DiaryDashboard() {
               // using all of it.
               <div className={feedLayout === "single" ? "mx-auto w-full max-w-2xl" : ""}>
                 <div className="mb-10">
-                  <p className="text-muted-foreground">Welcome back, <span className="text-primary font-medium">{user?.full_name}</span>. Here's your journey so far.</p>
+                  <p className="text-muted-foreground">{t("dashboard.welcomeBefore")}<span className="text-primary font-medium">{user?.full_name}</span>{t("dashboard.welcomeAfter")}</p>
                 </div>
 
                 <div className="mb-3 flex justify-end">
@@ -249,10 +251,10 @@ export default function DiaryDashboard() {
                     value={feedLayout}
                     onValueChange={(value) => value && setFeedLayout(value as "grid" | "single")}
                   >
-                    <ToggleGroupItem value="grid" aria-label="Masonry layout" title="Masonry layout">
+                    <ToggleGroupItem value="grid" aria-label={t("dashboard.masonryLayout")} title={t("dashboard.masonryLayout")}>
                       <LayoutGrid className="size-4" />
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="single" aria-label="Single column layout" title="Single column layout">
+                    <ToggleGroupItem value="single" aria-label={t("dashboard.singleColumnLayout")} title={t("dashboard.singleColumnLayout")}>
                       <Rows3 className="size-4" />
                     </ToggleGroupItem>
                   </ToggleGroup>
@@ -288,7 +290,7 @@ export default function DiaryDashboard() {
                     <div className="w-full flex flex-col items-center gap-4">
                       <div className="h-px w-24 bg-border" />
                       <p className="text-muted-foreground text-sm font-medium italic">
-                        You've reached the end of your memories.
+                        {t("dashboard.endOfMemories")}
                       </p>
                     </div>
                   )}
@@ -303,7 +305,7 @@ export default function DiaryDashboard() {
           {showRightLane && (
             <div className="hidden lg:block">
               <div className="sticky top-24 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                Coming soon
+                {t("dashboard.comingSoon")}
               </div>
             </div>
           )}
@@ -324,7 +326,7 @@ export default function DiaryDashboard() {
         <BookDialogContent className="sm:max-w-[960px]">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-2xl font-bold tracking-tight">
-              {selectedEntry ? "✨ Edit memory" : "New entry"}
+              {selectedEntry ? t("dashboard.editMemoryTitle") : t("dashboard.newEntryTitle")}
             </DialogTitle>
           </DialogHeader>
           <DiaryForm
@@ -345,21 +347,21 @@ export default function DiaryDashboard() {
       >
         <AlertDialogContent className="rounded-3xl border-primary/10 p-8">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold text-foreground">Delete this entry?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-bold text-foreground">{t("dashboard.deleteEntryTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground text-base">
-              This entry will be permanently removed from your timeline. Are you sure you want to delete it?
+              {t("dashboard.deleteEntryDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-3 mt-6">
             <AlertDialogCancel className="rounded-2xl border-none bg-muted hover:bg-muted/70 text-muted-foreground px-6 h-12">
-              No, I changed my mind
+              {t("dashboard.deleteEntryCancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isDeleting}
               className="rounded-2xl bg-destructive hover:bg-destructive/90 text-destructive-foreground px-6 h-12 shadow-lg shadow-destructive/20"
             >
-              {isDeleting ? "Deleting..." : "Yes, delete it"}
+              {isDeleting ? t("dashboard.deleteEntryDeleting") : t("dashboard.deleteEntryConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

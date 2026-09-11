@@ -7,6 +7,7 @@ import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextEleme
 import { createEntry, updateEntry, Entry, EntryAudience } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
 import { FriendUser, getFriends } from "@/services/friends"
+import { useLocale } from "@/context/locale-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Loader2, Lock, Users, Globe, X } from "lucide-react"
@@ -46,13 +47,14 @@ interface DiaryFormProps {
 
 export function DiaryForm({ onSuccess, initialData, token, userId, userName, existingHashtags }: DiaryFormProps) {
   const [loading, setLoading] = useState(false)
+  const { t } = useLocale()
   const [title, setTitle] = useState(initialData?.title || "")
   // A brand-new entry (no initialData) opens with a text box already primed
   // for typing, seeded with the same invite as the composer card.
   const [elements, setElements] = useState<ScrapElement[]>(() =>
     initialData
       ? initialData.layout?.elements || []
-      : [createPlaceholderTextElement(getEntryPlaceholderText(userName))]
+      : [createPlaceholderTextElement(getEntryPlaceholderText(t, userName))]
   )
   // Images added via the gallery button never become canvas elements, so they
   // can't be recovered from `elements` on edit — reconstruct them as whatever

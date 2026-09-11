@@ -3,6 +3,7 @@
 import { User } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
+import { useLocale } from "@/context/locale-context"
 
 interface NewEntryComposerProps {
   onNewEntry?: () => void
@@ -12,6 +13,7 @@ interface NewEntryComposerProps {
 // Facebook-style "what's on your mind" bar: sits atop the feed and opens the
 // New Entry modal on click, instead of a header button.
 export function NewEntryComposer({ onNewEntry, userName }: NewEntryComposerProps) {
+  const { t } = useLocale()
   const getInitials = (name?: string) => {
     if (!name) return <User className="size-4" />
     return name
@@ -34,7 +36,7 @@ export function NewEntryComposer({ onNewEntry, userName }: NewEntryComposerProps
         </AvatarFallback>
       </Avatar>
       <span className="flex-1 rounded-full bg-muted px-4 py-2.5 text-muted-foreground transition-colors hover:bg-muted/70">
-        {getEntryPlaceholderText(userName)}
+        {getEntryPlaceholderText(t, userName)}
       </span>
     </button>
   )
