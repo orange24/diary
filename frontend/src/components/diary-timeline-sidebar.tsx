@@ -2,6 +2,7 @@
 
 import { Entry } from "@/services/api"
 import { formatMonthYear, monthKey } from "@/lib/date-format"
+import { useLocale } from "@/context/locale-context"
 
 interface DiaryTimelineSidebarProps {
   entries: Entry[]
@@ -22,6 +23,7 @@ interface MonthGroup {
 // Left-column timeline: one entry per month, anchored to that month's first
 // (newest) entry in the feed so clicking scrolls the center column to it.
 export function DiaryTimelineSidebar({ entries, topOffset = 0 }: DiaryTimelineSidebarProps) {
+  const { locale } = useLocale()
   const groups: MonthGroup[] = []
   for (const entry of entries) {
     const key = monthKey(entry.created_date)
@@ -29,7 +31,7 @@ export function DiaryTimelineSidebar({ entries, topOffset = 0 }: DiaryTimelineSi
     if (existing) {
       existing.count += 1
     } else {
-      groups.push({ key, label: formatMonthYear(entry.created_date), anchorId: `entry-${entry.id}`, count: 1 })
+      groups.push({ key, label: formatMonthYear(entry.created_date, locale), anchorId: `entry-${entry.id}`, count: 1 })
     }
   }
 
