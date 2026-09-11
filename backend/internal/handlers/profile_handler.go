@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"database/sql"
+	"diary_app/backend/internal/apierr"
 	"diary_app/backend/internal/models"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -47,9 +49,10 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 	).Scan(&p.ID, &p.Username, &p.FullName, &p.ProfilePicture, &p.FacebookLink, &p.GmailLink, &p.AppleIDLink, &p.XLink, &p.Slug)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
+			apierr.JSON(c, http.StatusNotFound, apierr.ProfileNotFound, "Profile not found")
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("GetPublicProfile lookup error: %v", err)
+			apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		}
 		return
 	}
@@ -83,7 +86,8 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 		p.ID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("GetPublicProfile entries query error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 	defer rows.Close()
@@ -93,7 +97,8 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 		var e models.Entry
 		var layoutStr sql.NullString
 		if err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Scan error: " + err.Error()})
+			log.Printf("GetPublicProfile scan error: %v", err)
+			apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 			return
 		}
 		if layoutStr.Valid {
