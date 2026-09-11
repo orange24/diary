@@ -1,16 +1,19 @@
 "use client"
 
 import { useMemo } from "react"
-import { ArrowLeft, Hash } from "lucide-react"
+import { Hash } from "lucide-react"
 import { Entry } from "@/services/api"
 import { extractHashtags } from "@/lib/hashtags"
 import { DiaryGrid } from "@/components/diary-grid"
+import { cn } from "@/lib/utils"
 
 interface HashtagExplorerProps {
   entries: Entry[]
   isLoadingAll: boolean
   // Selection lives in the parent (not local state) so clicking a #tag
-  // inside a card anywhere else in the app can jump straight here.
+  // inside a card anywhere else in the app can jump straight here. Null
+  // means "no explicit choice yet" — the most-recently-referenced tag is
+  // shown below the cloud by default in that case.
   selectedTag: string | null
   onSelectTag: (tag: string | null) => void
   onEdit?: (id: number) => void
@@ -19,8 +22,9 @@ interface HashtagExplorerProps {
 }
 
 // Browsing surface for the "Hashtag" tab: a cloud of every #tag found across
-// the loaded entries, and — once one is picked — just the entries carrying
-// it, newest first. Tags are derived from entry text on the fly rather than
+// the loaded entries stays visible at all times, with the tagged entries for
+// whichever tag is active shown below it in the same masonry card layout as
+// the main feed. Tags are derived from entry text on the fly rather than
 // stored, so there's no backend change needed to support this.
 export function HashtagExplorer({
   entries,
@@ -41,44 +45,28 @@ export function HashtagExplorer({
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
   }, [entries])
 
+  // The tag attached to the single most recent entry that has any hashtag
+  // at all — what "most recently referenced" defaults to before the user
+  // has clicked anything.
+  const mostRecentTag = useMemo(() => {
+    let best: { tag: string; time: number } | null = null
+    for (const entry of entries) {
+      const time = new Date(entry.created_date).getTime()
+      for (const tag of extractHashtags(entry)) {
+        if (!best || time > best.time) best = { tag, time }
+      }
+    }
+    return best?.tag ?? null
+  }, [entries])
+
+  const activeTag = selectedTag ?? mostRecentTag
+
   const taggedEntries = useMemo(() => {
-    if (!selectedTag) return []
+    if (!activeTag) return []
     return entries
-      .filter((entry) => extractHashtags(entry).includes(selectedTag))
+      .filter((entry) => extractHashtags(entry).includes(activeTag))
       .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())
-  }, [entries, selectedTag])
-
-  if (selectedTag) {
-    return (
-      <div>
-        <button
-          type="button"
-          onClick={() => onSelectTag(null)}
-          className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-logo"
-        >
-          <ArrowLeft className="size-4" /> All Hashtags
-        </button>
-
-        <div className="mb-8 flex items-center gap-2">
-          <Hash className="size-6 text-logo" />
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">{selectedTag}</h2>
-          <span className="text-sm font-medium text-muted-foreground">({taggedEntries.length})</span>
-        </div>
-
-        {taggedEntries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No entries found with this hashtag</p>
-        ) : (
-          <DiaryGrid
-            entries={taggedEntries}
-            currentUserId={currentUserId}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onHashtagClick={onSelectTag}
-          />
-        )}
-      </div>
-    )
-  }
+  }, [entries, activeTag])
 
   return (
     <div>
@@ -100,11 +88,18 @@ export function HashtagExplorer({
               key={tag}
               type="button"
               onClick={() => onSelectTag(tag)}
-              className="flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-card-foreground shadow-sm transition-all hover:border-logo/40 hover:bg-logo/10 hover:text-logo"
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition-all",
+                tag === activeTag
+                  ? "border-logo bg-logo text-logo-foreground"
+                  : "border-border bg-card text-card-foreground hover:border-logo/40 hover:bg-logo/10 hover:text-logo"
+              )}
             >
               <Hash className="size-3.5" />
               {tag}
-              <span className="text-xs font-normal text-muted-foreground">{count}</span>
+              <span className={cn("text-xs font-normal", tag === activeTag ? "text-logo-foreground/80" : "text-muted-foreground")}>
+                {count}
+              </span>
             </button>
           ))}
         </div>
@@ -112,6 +107,28 @@ export function HashtagExplorer({
 
       {isLoadingAll && tagCounts.length > 0 && (
         <p className="mt-6 text-xs text-muted-foreground">Loading more older entries...</p>
+      )}
+
+      {activeTag && (
+        <div className="mt-8">
+          <div className="mb-6 flex items-center gap-2">
+            <Hash className="size-6 text-logo" />
+            <h3 className="text-2xl font-bold tracking-tight text-foreground">{activeTag}</h3>
+            <span className="text-sm font-medium text-muted-foreground">({taggedEntries.length})</span>
+          </div>
+
+          {taggedEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No entries found with this hashtag</p>
+          ) : (
+            <DiaryGrid
+              entries={taggedEntries}
+              currentUserId={currentUserId}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onHashtagClick={onSelectTag}
+            />
+          )}
+        </div>
       )}
     </div>
   )
