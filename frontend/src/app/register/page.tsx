@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, User } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
+import { useLocale } from "@/context/locale-context"
+import { translateError } from "@/lib/i18n"
+import { LanguageLinkSwitcher } from "@/components/language-link-switcher"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -28,6 +31,7 @@ export default function RegisterPage() {
   })
 
   const [loading, setLoading] = useState(false)
+  const { t } = useLocale()
   const router = useRouter()
   const pictureInputRef = useRef<HTMLInputElement>(null)
 
@@ -43,14 +47,14 @@ export default function RegisterPage() {
       const dataUrl = await resizeImageToDataUrl(file)
       setFormData((prev) => ({ ...prev, profile_picture: dataUrl }))
     } catch (err: any) {
-      toast.error("Couldn't use that image", { description: err.message })
+      toast.error(t("register.imageError"), { description: translateError(err, t) })
     }
   }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords don't match. Please check again.")
+      toast.error(t("register.passwordMismatch"))
       return
     }
 
@@ -58,12 +62,12 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, ...submitData } = formData
       await register(submitData) 
-      toast.success("Account created successfully! Redirecting you to the login page", {
-        description: "You can log in with your new username right away",
+      toast.success(t("register.successTitle"), {
+        description: t("register.successDescription"),
       })
       router.push("/login")
     } catch (err: any) {
-      toast.error("Something went wrong", { description: err.message })
+      toast.error(t("register.somethingWrong"), { description: translateError(err, t) })
     } finally {
       setLoading(false)
     }
@@ -79,9 +83,9 @@ export default function RegisterPage() {
       <Card className="w-full max-w-2xl shadow-2xl border-neutral-200 rounded-3xl overflow-hidden bg-white! text-neutral-900">
         <CardHeader className="pb-8">
           <CardTitle className="text-3xl font-bold text-center">
-            Join the <span className="uppercase text-logo">Papymory</span> Community
+            {t("register.titleBefore")}<span className="uppercase text-logo">Papymory</span>{t("register.titleAfter")}
           </CardTitle>
-          <p className="text-center text-neutral-500">Fill in your details to get started</p>
+          <p className="text-center text-neutral-500">{t("register.subtitle")}</p>
         </CardHeader>
 
         <CardContent className="p-8">
@@ -110,28 +114,28 @@ export default function RegisterPage() {
                 className="hidden"
                 onChange={handlePictureChange}
               />
-              <p className="text-xs font-medium text-neutral-500">Profile picture (optional)</p>
+              <p className="text-xs font-medium text-neutral-500">{t("register.profilePictureOptional")}</p>
             </div>
 
             {/* ส่วนที่ 1: ข้อมูลบัญชี (Account Info) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Username *</label>
+                <label className="text-sm font-semibold">{t("register.usernameLabel")}</label>
                 <Input name="username" required onChange={handleChange} className="rounded-xl bg-white!" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Full Name</label>
+                <label className="text-sm font-semibold">{t("register.fullNameLabel")}</label>
                 <Input name="full_name" onChange={handleChange} className="rounded-xl bg-white!" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Password *</label>
+                <label className="text-sm font-semibold">{t("register.passwordLabel")}</label>
                 <Input name="password" type="password" required onChange={handleChange} className="rounded-xl bg-white!" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Confirm Password *</label>
+                <label className="text-sm font-semibold">{t("register.confirmPasswordLabel")}</label>
                 <Input name="confirmPassword" type="password" required onChange={handleChange} className="rounded-xl bg-white!" />
               </div>
             </div>
@@ -141,23 +145,23 @@ export default function RegisterPage() {
             {/* ส่วนที่ 2: ข้อมูลส่วนตัว (Personal Info) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Birthdate</label>
+                <label className="text-sm font-semibold">{t("register.birthdateLabel")}</label>
                 <Input name="birthdate" type="date" onChange={handleChange} className="rounded-xl bg-white!" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Gender</label>
+                <label className="text-sm font-semibold">{t("register.genderLabel")}</label>
                 <Select onValueChange={(v) => setFormData({...formData, gender: v})}>
-                  <SelectTrigger className="rounded-xl bg-white!"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl bg-white!"><SelectValue placeholder={t("register.genderSelectPlaceholder")} /></SelectTrigger>
                   <SelectContent className="bg-white! text-neutral-900">
-                    <SelectItem value="male" className="focus:bg-neutral-100! focus:text-neutral-900!">Male</SelectItem>
-                    <SelectItem value="female" className="focus:bg-neutral-100! focus:text-neutral-900!">Female</SelectItem>
-                    <SelectItem value="other" className="focus:bg-neutral-100! focus:text-neutral-900!">Other</SelectItem>
+                    <SelectItem value="male" className="focus:bg-neutral-100! focus:text-neutral-900!">{t("register.genderMale")}</SelectItem>
+                    <SelectItem value="female" className="focus:bg-neutral-100! focus:text-neutral-900!">{t("register.genderFemale")}</SelectItem>
+                    <SelectItem value="other" className="focus:bg-neutral-100! focus:text-neutral-900!">{t("register.genderOther")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Country</label>
-                <Input name="country" placeholder="Thailand" onChange={handleChange} className="rounded-xl bg-white!" />
+                <label className="text-sm font-semibold">{t("register.countryLabel")}</label>
+                <Input name="country" placeholder={t("register.countryPlaceholder")} onChange={handleChange} className="rounded-xl bg-white!" />
               </div>
             </div>
 
@@ -165,25 +169,27 @@ export default function RegisterPage() {
 
             {/* ส่วนที่ 3: Social Media Links (Optional) */}
             <div className="space-y-3">
-              <label className="text-sm font-bold text-neutral-500">Social Media Links</label>
+              <label className="text-sm font-bold text-neutral-500">{t("register.socialLinksLabel")}</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Input name="facebook_link" placeholder="Facebook Profile URL" onChange={handleChange} className="rounded-xl bg-blue-50!" />
-                <Input name="gmail_link" placeholder="Gmail Address" onChange={handleChange} className="rounded-xl bg-red-50!" />
-                <Input name="apple_id_link" placeholder="Apple ID" onChange={handleChange} className="rounded-xl bg-gray-50!" />
-                <Input name="x_link" placeholder="X (Twitter) URL" onChange={handleChange} className="rounded-xl bg-slate-50!" />
+                <Input name="facebook_link" placeholder={t("register.facebookPlaceholder")} onChange={handleChange} className="rounded-xl bg-blue-50!" />
+                <Input name="gmail_link" placeholder={t("register.gmailPlaceholder")} onChange={handleChange} className="rounded-xl bg-red-50!" />
+                <Input name="apple_id_link" placeholder={t("register.appleIdPlaceholder")} onChange={handleChange} className="rounded-xl bg-gray-50!" />
+                <Input name="x_link" placeholder={t("register.xPlaceholder")} onChange={handleChange} className="rounded-xl bg-slate-50!" />
               </div>
             </div>
 
             <Button type="submit" disabled={loading} className="w-full bg-logo text-logo-foreground hover:bg-logo/90 hover:scale-[1.02] transition-transform py-6 rounded-2xl text-lg font-bold shadow-lg shadow-logo/20">
-              {loading ? "Creating Account..." : "Complete Registration"}
+              {loading ? t("register.submitCreating") : t("register.submit")}
             </Button>
           </form>
         </CardContent>
 
         <CardFooter className="justify-center p-6 border-t border-neutral-200 bg-white!">
-          <p className="text-sm">Already a member? <Link href="/login" className="text-logo font-bold hover:underline">Sign In</Link></p>
+          <p className="text-sm">{t("register.alreadyMember")} <Link href="/login" className="text-logo font-bold hover:underline">{t("register.signIn")}</Link></p>
         </CardFooter>
       </Card>
+
+      <LanguageLinkSwitcher className="mt-6" />
     </div>
   )
 }
