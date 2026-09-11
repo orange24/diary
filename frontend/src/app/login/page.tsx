@@ -18,15 +18,19 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form"
-
-const loginSchema = z.object({
-  username: z.string().min(1, { message: "✕ Please enter your username" }),
-  password: z.string().min(1, { message: "✕ Please enter your password" }),
-})
+import { useLocale } from "@/context/locale-context"
+import { translateError } from "@/lib/i18n"
+import { LanguageLinkSwitcher } from "@/components/language-link-switcher"
 
 export default function LoginPage() {
   const { handleLogin } = useAuth()
+  const { t } = useLocale()
   const router = useRouter()
+
+  const loginSchema = z.object({
+    username: z.string().min(1, { message: t("login.usernameRequired") }),
+    password: z.string().min(1, { message: t("login.passwordRequired") }),
+  })
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -45,10 +49,11 @@ export default function LoginPage() {
         full_name: data.full_name,
         profile_picture: data.profile_picture,
         slug: data.slug,
+        locale: data.locale,
       })
       router.push("/")
     } catch (err: any) {
-      toast.error(err.message || "Login failed")
+      toast.error(translateError(err, t) || t("login.loginFailed"))
     }
   }
 
@@ -87,9 +92,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl border-neutral-200 rounded-3xl overflow-hidden bg-white">
         <CardHeader className="pt-8">
           <CardTitle className="text-3xl font-bold text-center text-neutral-900 tracking-tight">
-            <span className="uppercase text-logo">Papymory</span> Login
+            <span className="uppercase text-logo">Papymory</span> {t("login.title")}
           </CardTitle>
-          <p className="text-center text-neutral-500 text-sm mt-2">Log in to save your story</p>
+          <p className="text-center text-neutral-500 text-sm mt-2">{t("login.subtitle")}</p>
         </CardHeader>
         <CardContent className="p-8">
           <Form {...form}>
@@ -102,7 +107,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormControl>
                       <Input
-                        placeholder="Username"
+                        placeholder={t("login.usernamePlaceholder")}
                         {...field}
                         className={`rounded-xl py-6 px-4 bg-white! text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("username")}`}
                       />
@@ -120,7 +125,7 @@ export default function LoginPage() {
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Password"
+                        placeholder={t("login.passwordPlaceholder")}
                         {...field}
                         className={`rounded-xl py-6 px-4 bg-white! text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 border-2 ${getErrorClass("password")}`}
                       />
@@ -134,22 +139,24 @@ export default function LoginPage() {
                 type="submit"
                 className="w-full bg-logo text-logo-foreground hover:bg-logo/90 py-7 rounded-xl text-lg font-bold transition-all shadow-lg active:scale-95 hover:shadow-logo/25"
               >
-                Sign In
+                {t("login.signIn")}
               </Button>
 
               <div className="text-sm text-neutral-500 text-center pt-2">
-                Don't have an account?{' '}
+                {t("login.noAccount")}{' '}
                 <Link
                   href="/register"
                   className="text-logo font-bold hover:underline decoration-2 underline-offset-4"
                 >
-                  Sign Up
+                  {t("login.signUp")}
                 </Link>
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      <LanguageLinkSwitcher className="mt-6" />
     </div>
   )
 }
