@@ -79,7 +79,7 @@ export default function RegisterPage() {
     // bg-white! overrides where a shared component (Input, Select, Card) bakes
     // in a dark:bg-input/30-style class that would otherwise leak through
     // under the OS's dark color-scheme preference.
-    <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-100 p-6">
       <Card className="w-full max-w-2xl shadow-2xl border-neutral-200 rounded-3xl overflow-hidden bg-white! text-neutral-900">
         <CardHeader className="pb-8">
           <CardTitle className="text-3xl font-bold text-center">

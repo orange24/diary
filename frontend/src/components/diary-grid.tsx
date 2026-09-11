@@ -23,7 +23,6 @@ import { linkifyMentions } from "@/lib/mentions"
 import { ScrapElement } from "@/types/scrapbook"
 import { formatEntryDate } from "@/lib/date-format"
 import { useLocale } from "@/context/locale-context"
-import { DICTIONARIES } from "@/locales"
 import Link from "next/link"
 
 interface DiaryGridProps {
@@ -89,8 +88,7 @@ function useColumnCount() {
 }
 
 export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagClick, layout = "grid" }: DiaryGridProps) {
-  const { locale } = useLocale()
-  const dict = DICTIONARIES[locale]
+  const { locale, t } = useLocale()
   const [isOpen, setIsOpen] = useState(false)
   const [currentImages, setCurrentImages] = useState<string[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -176,7 +174,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             {entry.audience === "public" && <Globe className="size-3.5 text-blue-500" />}
             {entry.audience === "friend" && <Users className="size-3.5 text-blue-300" />}
             {entry.audience === "private" && <Lock className="size-3.5 text-pink-300" />}
-            {formatEntryDate(entry.created_date, dict, locale)}
+            {formatEntryDate(entry.created_date, t, locale)}
           </div>
 
           <Card
@@ -368,7 +366,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
                       <DialogTitle className="text-base">{viewingEntry.created_by || "Anonymous"}</DialogTitle>
                     )}
                     <span className="text-xs text-muted-foreground">
-                      {formatEntryDate(viewingEntry.created_date, dict, locale)}
+                      {formatEntryDate(viewingEntry.created_date, t, locale)}
                     </span>
                   </div>
                 </div>

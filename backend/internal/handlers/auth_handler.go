@@ -193,6 +193,11 @@ func (h *EntryHandler) UpdateLocale(c *gin.Context) {
 		return
 	}
 
+	if input.Locale != "en" && input.Locale != "th" {
+		apierr.JSON(c, http.StatusBadRequest, apierr.ValidationFailed, "Unsupported locale")
+		return
+	}
+
 	_, err := h.DB.Exec(`UPDATE users SET locale = $1 WHERE id = $2`, input.Locale, userID)
 	if err != nil {
 		log.Printf("UpdateLocale error: %v", err)

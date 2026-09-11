@@ -29,7 +29,7 @@ go test ./...          # no test files currently exist in the repo
 ```bash
 docker-compose up --build
 ```
-Brings up Postgres (`5433:5432`), backend (`9090:8888`), and frontend (`3000:3000`). Note the backend's `docker-compose.yml` env currently points `DATABASE_URL` at a remote Supabase host rather than the local `db` service — check this before relying on the compose DB.
+Brings up Postgres (`5433:5432`), backend (`9090:8888`), and frontend (`3000:3000`). The backend's `docker-compose.yml` env now points `DATABASE_URL` at the local `db` service (`postgresql://...@db:5432/diary`).
 
 ## Architecture
 

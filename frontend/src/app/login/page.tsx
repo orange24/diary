@@ -68,7 +68,7 @@ export default function LoginPage() {
     // Login page is pinned to a light, white look regardless of the app's
     // dark/light theme toggle — hence literal neutral-* colors below instead
     // of the theme-reactive bg-background / text-muted-foreground tokens.
-    <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-100 p-4">
       {/* เพิ่ม CSS สำหรับสั่นแบบ On-the-fly ถ้าไม่ได้แก้ tailwind.config */}
       <style jsx global>{`
         @keyframes shake {

@@ -67,7 +67,7 @@ export const getProfile = async (token: string): Promise<ProfileData> => {
   return response.json();
 };
 
-export type ProfileUpdate = Omit<ProfileData, 'id' | 'username' | 'slug'>;
+export type ProfileUpdate = Omit<ProfileData, 'id' | 'username' | 'slug' | 'locale'>;
 
 export const updateProfile = async (data: ProfileUpdate, token: string) => {
   const response = await fetch(`${API_BASE_URL}/profile`, {

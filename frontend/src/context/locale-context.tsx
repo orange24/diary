@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { DICTIONARIES, SUPPORTED_LOCALES, Locale } from "@/locales"
 import { TranslationKey } from "@/locales/types"
 import { translate } from "@/lib/i18n"
@@ -41,16 +41,53 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   // If the account's saved locale becomes available after this provider's
   // first render (e.g. it mounts before AuthProvider finishes resolving),
   // adopt it once — but never override a choice the user already made this
-  // session by clicking the switcher.
+  // session by clicking the switcher. Also resets the guard on logout (the
+  // `!user` branch) so a *different* account logging in afterward (same
+  // browser tab, no page reload) gets its own saved locale adopted instead
+  // of inheriting whatever the previous account left active — kept in this
+  // same effect, rather than a separate one, so it doesn't add a second
+  // instance of the (already-accepted) set-state-in-effect pattern below.
   const [adoptedAccountLocale, setAdoptedAccountLocale] = useState(false)
   useEffect(() => {
-    if (!adoptedAccountLocale && isSupportedLocale(user?.locale)) {
+    if (!user) {
+      if (adoptedAccountLocale) setAdoptedAccountLocale(false)
+      return
+    }
+    if (!adoptedAccountLocale && isSupportedLocale(user.locale)) {
       setLocaleState(user.locale)
       setAdoptedAccountLocale(true)
     }
-  }, [user?.locale, adoptedAccountLocale])
+  }, [user, adoptedAccountLocale])
 
-  const setLocale = (next: Locale) => {
+  // Catch-up sync: an explicit in-session pick (made either before this
+  // login or after, via the switcher) is deliberately allowed to win over
+  // the account's saved locale — see the adoption effect above, which
+  // skips overriding it. But that win should also be written back to the
+  // account instead of leaving it permanently out of sync. This only ever
+  // fires when `adoptedAccountLocale` is already true going into a render
+  // (i.e. NOT the same tick the adoption effect just adopted the account's
+  // own locale, in which case `locale` already equals `user.locale` and
+  // there's nothing to sync) — so it can't loop: it never itself changes
+  // `locale`, `user.locale`, or `adoptedAccountLocale`.
+  useEffect(() => {
+    if (!user || !token || !adoptedAccountLocale) return
+    if (user.locale !== locale) {
+      updateLocale(locale, token).catch(() => {
+        /* best-effort; account just stays out of sync until the next
+           successful locale change or login */
+      })
+    }
+  }, [user, token, adoptedAccountLocale, locale])
+
+  // Keep <html lang> in step with the active locale for screen readers /
+  // browser heuristics — layout.tsx is a server component and can't know
+  // the client-resolved locale up front, so this is the only place it can
+  // be kept current, on mount and on every subsequent switch.
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = locale
+  }, [locale])
+
+  const setLocale = useCallback((next: Locale) => {
     setLocaleState(next)
     setAdoptedAccountLocale(true)
     if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, next)
@@ -62,14 +99,16 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
            device until the next successful change. */
       })
     }
-  }
+  }, [token, updateUser])
 
   const t = useMemo(() => {
     const dict = DICTIONARIES[locale]
     return (key: TranslationKey, vars?: Record<string, string | number>) => translate(dict, key, vars)
   }, [locale])
 
-  return <LocaleContext.Provider value={{ locale, setLocale, t }}>{children}</LocaleContext.Provider>
+  const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t])
+
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
 }
 
 export const useLocale = () => {

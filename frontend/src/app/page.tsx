@@ -18,6 +18,8 @@ import { BookDialogContent } from "@/components/book-dialog-content"
 import { getEntries, getEntry, deleteEntry, Entry } from "@/services/api"
 import { useAuth } from "@/context/auth-context"
 import { useLocale } from "@/context/locale-context"
+import { toast } from "sonner"
+import { translateError } from "@/lib/i18n"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -170,9 +172,9 @@ export default function DiaryDashboard() {
     try {
       await deleteEntry(deleteId, token);
       setEntries((prev) => prev.filter((e) => e.id !== deleteId));
-      setDeleteId(null); 
+      setDeleteId(null);
     } catch (error) {
-      alert(t("dashboard.deleteFailedAlert"));
+      toast.error(translateError(error, t) || t("dashboard.deleteFailedAlert"));
     } finally {
       setIsDeleting(false);
     }
@@ -185,7 +187,7 @@ export default function DiaryDashboard() {
       setSelectedEntry(entry)
       setIsModalOpen(true)
     } catch (error) {
-      alert(t("dashboard.editEntryLoadFailedAlert"))
+      toast.error(translateError(error, t) || t("dashboard.editEntryLoadFailedAlert"))
     }
   }
 
