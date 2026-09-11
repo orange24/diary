@@ -45,6 +45,10 @@ export default function DiaryDashboard() {
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [feedLayout, setFeedLayout] = useState<"grid" | "single">("single")
+  // Nosy gets its own layout toggle state — defaults to "grid" (masonry),
+  // unlike the home feed's "single" default, since it's a browse-y feed of
+  // other people's public entries rather than your own running diary.
+  const [nosyFeedLayout, setNosyFeedLayout] = useState<"grid" | "single">("grid")
   // Single-column mode reserves a real right lane (for content added
   // later); full-width grid mode instead docks a collapsed bar to the
   // screen edge. Only relevant on the home feed — hashtags/friends don't
@@ -266,14 +270,14 @@ export default function DiaryDashboard() {
             ) : activeView === "friends" ? (
               <FriendsExplorer token={token} />
             ) : activeView === "nosy" ? (
-              <div className={feedLayout === "single" ? "mx-auto w-full max-w-2xl" : ""}>
+              <div className={nosyFeedLayout === "single" ? "mx-auto w-full max-w-2xl" : ""}>
                 <div className="mb-3 flex items-center justify-between gap-4">
                   <p className="text-muted-foreground">{t("dashboard.nosyIntro")}</p>
                   <ToggleGroup
                     type="single"
                     variant="outline"
-                    value={feedLayout}
-                    onValueChange={(value) => value && setFeedLayout(value as "grid" | "single")}
+                    value={nosyFeedLayout}
+                    onValueChange={(value) => value && setNosyFeedLayout(value as "grid" | "single")}
                   >
                     <ToggleGroupItem value="grid" aria-label={t("dashboard.masonryLayout")} title={t("dashboard.masonryLayout")}>
                       <LayoutGrid className="size-4" />
@@ -291,7 +295,7 @@ export default function DiaryDashboard() {
                     entries={nosyEntries}
                     currentUserId={user?.userId}
                     onHashtagClick={openHashtag}
-                    layout={feedLayout}
+                    layout={nosyFeedLayout}
                   />
                 )}
 
