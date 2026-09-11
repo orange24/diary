@@ -171,7 +171,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
           <div className="mb-1.5 flex items-center gap-1 text-[14px] text-[#9b9b9b]">
             {entry.audience === "public" && <Globe className="size-3.5 text-blue-300" />}
             {entry.audience === "friend" && <Users className="size-3.5 text-blue-300" />}
-            {entry.audience === "private" && <Lock className="size-3.5 text-gray-300" />}
+            {entry.audience === "private" && <Lock className="size-3.5 text-pink-300" />}
             {formatEntryDate(entry.created_date)}
           </div>
 
@@ -182,7 +182,7 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             } ${
               entry.audience === "public" || entry.audience === "friend"
                 ? "border border-blue-300"
-                : "border border-gray-200"
+                : "border border-pink-200"
             }`}
           >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
