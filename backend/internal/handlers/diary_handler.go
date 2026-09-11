@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"diary_app/backend/internal/apierr"
 	"diary_app/backend/internal/models"
 	"encoding/json"
 	"log"
@@ -84,7 +85,8 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 
 	rows, err := h.DB.Query(query, args...)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		log.Printf("GetEntries query error: %v", err)
+		apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
 		return
 	}
 	defer rows.Close()
@@ -95,7 +97,8 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 		var layoutStr sql.NullString
 		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID, &e.CreatedByAvatar, &e.CreatedBySlug)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Scan error: " + err.Error()})
+			log.Printf("GetEntries scan error: %v", err)
+			apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
 			return
 		}
 		if layoutStr.Valid {
@@ -110,7 +113,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 func (h *EntryHandler) CreateEntry(c *gin.Context) {
 	var input models.Entry
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apierr.JSON(c, 400, apierr.ValidationFailed, err.Error())
 		return
 	}
 
@@ -138,7 +141,8 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 		Scan(&input.ID, &input.CreatedDate)
 
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to create entry: " + err.Error()})
+		log.Printf("CreateEntry error: %v", err)
+		apierr.JSON(c, 500, apierr.EntryCreateFailed, "Failed to create entry")
 		return
 	}
 	c.JSON(200, input)
@@ -152,13 +156,14 @@ func (h *EntryHandler) DeleteEntry(c *gin.Context) {
 	// ป้องกันไม่ให้คนอื่นมาลบ ID ที่ไม่ใช่ของตัวเอง
 	res, err := h.DB.Exec("DELETE FROM entries WHERE id = $1 AND user_id = $2", id, userID)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to delete entry"})
+		log.Printf("DeleteEntry error: %v", err)
+		apierr.JSON(c, 500, apierr.EntryDeleteFailed, "Failed to delete entry")
 		return
 	}
 
 	count, _ := res.RowsAffected()
 	if count == 0 {
-		c.JSON(403, gin.H{"error": "You don't have permission to delete this entry"})
+		apierr.JSON(c, 403, apierr.NoPermission, "You don't have permission to delete this entry")
 		return
 	}
 
@@ -171,7 +176,7 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 	userID := c.MustGet("user_id")
 	var input models.Entry
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apierr.JSON(c, 400, apierr.ValidationFailed, err.Error())
 		return
 	}
 
@@ -192,13 +197,14 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, input.Audience, createdDateParam, id, userID)
 
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to update entry"})
+		log.Printf("UpdateEntry error: %v", err)
+		apierr.JSON(c, 500, apierr.EntryUpdateFailed, "Failed to update entry")
 		return
 	}
 
 	count, _ := res.RowsAffected()
 	if count == 0 {
-		c.JSON(403, gin.H{"error": "You don't have permission to update this entry"})
+		apierr.JSON(c, 403, apierr.NoPermission, "You don't have permission to update this entry")
 		return
 	}
 
@@ -222,9 +228,10 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(404, gin.H{"error": "Entry not found or unauthorized"})
+			apierr.JSON(c, 404, apierr.EntryNotFound, "Entry not found or unauthorized")
 		} else {
-			c.JSON(500, gin.H{"error": err.Error()})
+			log.Printf("GetEntry error: %v", err)
+			apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
 		}
 		return
 	}
@@ -235,7 +242,7 @@ func (h *EntryHandler) UploadFiles(c *gin.Context) {
 	// 1. ตรวจสอบว่ามี CLOUDINARY_URL หรือไม่
 	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
 	if cloudinaryURL == "" {
-		c.JSON(500, gin.H{"error": "Cloudinary configuration missing"})
+		apierr.JSON(c, 500, apierr.StorageNotConfigured, "Storage service is not configured")
 		return
 	}
 	log.Println("cloudinaryURL = ", cloudinaryURL)
@@ -244,7 +251,7 @@ func (h *EntryHandler) UploadFiles(c *gin.Context) {
 	cld, err := cloudinary.NewFromURL(cloudinaryURL)
 	if err != nil {
 		log.Printf("Failed to init Cloudinary: %v", err)
-		c.JSON(500, gin.H{"error": "Failed to initialize storage service"})
+		apierr.JSON(c, 500, apierr.StorageInitFailed, "Failed to initialize storage service")
 		return
 	}
 
@@ -252,7 +259,7 @@ func (h *EntryHandler) UploadFiles(c *gin.Context) {
 
 	log.Println("cloudinaryURL err = ", err)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid form data"})
+		apierr.JSON(c, 400, apierr.InvalidFormData, "Invalid form data")
 		return
 	}
 
@@ -274,7 +281,7 @@ func (h *EntryHandler) UploadFiles(c *gin.Context) {
 
 		if err != nil {
 			log.Printf("Cloudinary upload error: %v", err)
-			c.JSON(500, gin.H{"error": "Upload failed"})
+			apierr.JSON(c, 500, apierr.UploadFailed, "Upload failed")
 			return
 		}
 
