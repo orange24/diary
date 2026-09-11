@@ -24,4 +24,8 @@ type User struct {
 	// once at registration from their full name (or username), de-duplicated
 	// with a numeric suffix. Immutable: no endpoint accepts changes to it.
 	Slug string `json:"slug"`
+
+	// UI language preference ("en", "th", ...). Empty string means "not
+	// chosen yet" — the frontend decides a default.
+	Locale string `json:"locale"`
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"diary_app/backend/internal/apierr"
 	"diary_app/backend/internal/models"
 	"diary_app/backend/internal/utils"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 func (h *EntryHandler) Register(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		apierr.JSON(c, http.StatusBadRequest, apierr.ValidationFailed, err.Error())
 		return
 	}
 
@@ -30,7 +31,7 @@ func (h *EntryHandler) Register(c *gin.Context) {
 
 	slug, err := generateUniqueSlug(h.DB, user.FullName, user.Username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate profile slug"})
+		apierr.JSON(c, http.StatusInternalServerError, apierr.SlugGenerationFailed, "Failed to generate profile slug")
 		return
 	}
 
@@ -46,7 +47,7 @@ func (h *EntryHandler) Register(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Registration failed"})
+		apierr.JSON(c, http.StatusConflict, apierr.RegistrationFailed, "Registration failed")
 		return
 	}
 
@@ -58,13 +59,13 @@ func (h *EntryHandler) Login(c *gin.Context) {
 	var input models.User
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("Error binding JSON: %v", err) // ดูว่า JSON ส่งมาผิด format ไหม
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		apierr.JSON(c, http.StatusBadRequest, apierr.ValidationFailed, err.Error())
 		return
 	}
 
 	var dbUser models.User
 	// 1. เพิ่ม username และ full_name เข้าไปใน Query
-	query := "SELECT id, username, full_name, password, COALESCE(profile_picture, ''), slug FROM users WHERE username = $1"
+	query := "SELECT id, username, full_name, password, COALESCE(profile_picture, ''), slug, COALESCE(locale, '') FROM users WHERE username = $1"
 	err := h.DB.QueryRow(query, input.Username).Scan(
 		&dbUser.ID,
 		&dbUser.Username,
@@ -72,22 +73,23 @@ func (h *EntryHandler) Login(c *gin.Context) {
 		&dbUser.Password,
 		&dbUser.ProfilePicture,
 		&dbUser.Slug,
+		&dbUser.Locale,
 	)
 
 	if err != nil {
-		c.JSON(401, gin.H{"error": "Invalid username or password"})
+		apierr.JSON(c, http.StatusUnauthorized, apierr.InvalidCredentials, "Invalid username or password")
 		return
 	}
 
 	// เช็ค bcrypt ว่ารหัสผ่านที่ส่งมาตรงกับ hash ในฐานข้อมูลไหม
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(input.Password)); err != nil {
-		c.JSON(401, gin.H{"error": "Invalid username or password"})
+		apierr.JSON(c, http.StatusUnauthorized, apierr.InvalidCredentials, "Invalid username or password")
 		return
 	}
 
 	token, err := utils.GenerateToken(dbUser.ID)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Could not generate token"})
+		apierr.JSON(c, http.StatusInternalServerError, apierr.TokenGenerationFailed, "Could not generate token")
 		return
 	}
 
@@ -99,6 +101,7 @@ func (h *EntryHandler) Login(c *gin.Context) {
 		"full_name":       dbUser.FullName,
 		"profile_picture": dbUser.ProfilePicture,
 		"slug":            dbUser.Slug,
+		"locale":          dbUser.Locale,
 	})
 }
 
@@ -110,15 +113,16 @@ func (h *EntryHandler) GetProfile(c *gin.Context) {
 	query := `SELECT id, username, full_name,
 		COALESCE(to_char(birthdate, 'YYYY-MM-DD'), ''), COALESCE(gender, ''), COALESCE(country, ''),
 		COALESCE(facebook_link, ''), COALESCE(gmail_link, ''), COALESCE(apple_id_link, ''), COALESCE(x_link, ''),
-		COALESCE(profile_picture, ''), slug
+		COALESCE(profile_picture, ''), slug, COALESCE(locale, '')
 		FROM users WHERE id = $1`
 
 	err := h.DB.QueryRow(query, userID).Scan(
 		&u.ID, &u.Username, &u.FullName, &u.Birthdate, &u.Gender, &u.Country,
-		&u.FacebookLink, &u.GmailLink, &u.AppleIDLink, &u.XLink, &u.ProfilePicture, &u.Slug,
+		&u.FacebookLink, &u.GmailLink, &u.AppleIDLink, &u.XLink, &u.ProfilePicture, &u.Slug, &u.Locale,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("GetProfile error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 
@@ -143,7 +147,7 @@ func (h *EntryHandler) UpdateProfile(c *gin.Context) {
 
 	var input UpdateProfileInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		apierr.JSON(c, http.StatusBadRequest, apierr.ValidationFailed, err.Error())
 		return
 	}
 
@@ -166,9 +170,35 @@ func (h *EntryHandler) UpdateProfile(c *gin.Context) {
 		input.ProfilePicture, userID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("UpdateProfile error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated", "full_name": input.FullName})
+}
+
+type UpdateLocaleInput struct {
+	Locale string `json:"locale" binding:"required"`
+}
+
+// --- เปลี่ยนภาษา UI --- (แยกจาก UpdateProfile เพราะ endpoint นั้นเขียนทับทุก field
+// ของโปรไฟล์เสมอ — การสลับภาษาไม่ควรต้องดึงโปรไฟล์เต็มมาก่อนแล้วส่งกลับไปทั้งก้อน)
+func (h *EntryHandler) UpdateLocale(c *gin.Context) {
+	userID := c.MustGet("user_id").(int)
+
+	var input UpdateLocaleInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		apierr.JSON(c, http.StatusBadRequest, apierr.ValidationFailed, err.Error())
+		return
+	}
+
+	_, err := h.DB.Exec(`UPDATE users SET locale = $1 WHERE id = $2`, input.Locale, userID)
+	if err != nil {
+		log.Printf("UpdateLocale error: %v", err)
+		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"locale": input.Locale})
 }
