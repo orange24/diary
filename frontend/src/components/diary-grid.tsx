@@ -175,9 +175,9 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
 
           <Card
             id={`entry-${entry.id}`}
-            className={`group relative block gap-0 overflow-hidden border-none p-0 shadow-sm transition-all duration-300 hover:shadow-md scroll-mt-24 ${
+            className={`group relative block gap-0 overflow-hidden p-0 shadow-sm transition-all duration-300 hover:shadow-md scroll-mt-24 ${
               isOwn ? "bg-card" : "bg-[#fdf2f8]"
-            }`}
+            } ${entry.audience === "public" ? "border border-blue-300" : "border-none"}`}
           >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             {(() => {
