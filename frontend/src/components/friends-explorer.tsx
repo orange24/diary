@@ -152,9 +152,13 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
     }
   }
 
+  // The tab badge counts only incoming requests — the ones actually
+  // waiting on this user to do something — not outgoing ones too.
+  const incomingCount = requests.filter((r) => r.direction === "incoming").length
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "friends", label: "My Friends" },
-    { id: "requests", label: requests.length > 0 ? `Friend Requests (${requests.length})` : "Friend Requests" },
+    { id: "requests", label: incomingCount > 0 ? `Friend Requests (${incomingCount})` : "Friend Requests" },
     { id: "search", label: "Find Friends" },
   ]
 
@@ -211,22 +215,31 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
             {requests.map((r) => (
               <PersonRow
                 key={r.id}
-                name={r.requester.full_name}
-                username={r.requester.username}
-                avatarUrl={r.requester.profile_picture}
+                name={r.user.full_name}
+                username={r.user.username}
+                avatarUrl={r.user.profile_picture}
                 action={
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleAccept(r.id)}
-                      className="bg-logo text-logo-foreground hover:bg-logo/90"
-                    >
-                      <Check className="size-4" /> Accept
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleRemove(r.id)}>
-                      <X className="size-4" /> Decline
-                    </Button>
-                  </div>
+                  r.direction === "incoming" ? (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleAccept(r.id)}
+                        className="bg-logo text-logo-foreground hover:bg-logo/90"
+                      >
+                        <Check className="size-4" /> Accept
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleRemove(r.id)}>
+                        <X className="size-4" /> Decline
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">Request sent</span>
+                      <Button variant="ghost" size="sm" onClick={() => handleRemove(r.id)}>
+                        <X className="size-4" /> Cancel
+                      </Button>
+                    </div>
+                  )
                 }
               />
             ))}

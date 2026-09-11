@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,9 +17,12 @@ type FriendUser struct {
 	ProfilePicture string `json:"profile_picture"`
 }
 
+// "incoming" (someone sent it to us, waiting on our accept/decline) |
+// "outgoing" (we sent it, waiting on the other person)
 type FriendRequestItem struct {
 	ID        int        `json:"id"`
-	Requester FriendUser `json:"requester"`
+	Direction string     `json:"direction"`
+	User      FriendUser `json:"user"`
 }
 
 type FriendListItem struct {
@@ -128,11 +132,16 @@ func (h *EntryHandler) ListFriendRequests(c *gin.Context) {
 	userID := c.MustGet("user_id").(int)
 
 	query := `
-		SELECT f.id, u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.profile_picture, '')
+		SELECT f.id, 'incoming' AS direction, u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.profile_picture, ''), f.created_date
 		FROM friendships f
 		JOIN users u ON u.id = f.requester_id
 		WHERE f.addressee_id = $1 AND f.status = 'pending'
-		ORDER BY f.created_date DESC`
+		UNION ALL
+		SELECT f.id, 'outgoing' AS direction, u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.profile_picture, ''), f.created_date
+		FROM friendships f
+		JOIN users u ON u.id = f.addressee_id
+		WHERE f.requester_id = $1 AND f.status = 'pending'
+		ORDER BY created_date DESC`
 
 	rows, err := h.DB.Query(query, userID)
 	if err != nil {
@@ -144,7 +153,8 @@ func (h *EntryHandler) ListFriendRequests(c *gin.Context) {
 	requests := []FriendRequestItem{}
 	for rows.Next() {
 		var req FriendRequestItem
-		if err := rows.Scan(&req.ID, &req.Requester.ID, &req.Requester.Username, &req.Requester.FullName, &req.Requester.ProfilePicture); err != nil {
+		var createdDate time.Time
+		if err := rows.Scan(&req.ID, &req.Direction, &req.User.ID, &req.User.Username, &req.User.FullName, &req.User.ProfilePicture, &createdDate); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

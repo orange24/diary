@@ -11,9 +11,12 @@ export interface FriendListItem extends FriendUser {
   friendship_id: number
 }
 
+// "incoming" (someone sent it to us, waiting on our accept/decline) |
+// "outgoing" (we sent it, waiting on the other person)
 export interface FriendRequestItem {
   id: number
-  requester: FriendUser
+  direction: "incoming" | "outgoing"
+  user: FriendUser
 }
 
 export type Relationship = "none" | "friends" | "outgoing" | "incoming"
