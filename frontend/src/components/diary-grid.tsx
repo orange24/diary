@@ -181,10 +181,10 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               isOwn ? "bg-card" : "bg-[#fdf2f8]"
             } ${
               entry.audience === "public"
-                ? "border border-blue-500"
+                ? "border-t-4 border-t-blue-500"
                 : entry.audience === "friend"
-                  ? "border border-blue-300"
-                  : "border border-pink-200"
+                  ? "border-t-4 border-t-blue-300"
+                  : "border-t-4 border-t-pink-200"
             }`}
           >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
