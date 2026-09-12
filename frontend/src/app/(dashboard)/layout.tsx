@@ -21,7 +21,7 @@ import { useAuth } from "@/context/auth-context"
 import { useLocale } from "@/context/locale-context"
 import { DashboardProvider, useDashboard } from "@/context/dashboard-context"
 
-// Shared by all four dashboard routes (/, /hashtags, /friends, /nosy): the
+// Shared by all three dashboard routes (/, /hashtags, /friends): the
 // auth guard, header, left timeline sidebar, and the entry create/edit +
 // delete-confirmation dialogs — the same dialogs regardless of which route
 // triggered them, so they can't live inside any one page.
@@ -52,7 +52,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     }
   }, [token, isLoading, router])
 
-  // Only relevant on the home feed — hashtags/friends/nosy don't have a
+  // Only relevant on the home feed — hashtags/friends don't have a
   // layout toggle, so this reservation never applies to them.
   const showRightLane = pathname === "/" && feedLayout === "single"
   const showRightBar = pathname === "/" && feedLayout === "grid"

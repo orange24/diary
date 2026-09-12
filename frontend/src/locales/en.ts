@@ -14,7 +14,6 @@ const en: Dictionary = {
     navHome: "Home",
     navHashtag: "Hashtag",
     navFriends: "Friends",
-    navNosy: "Nosy",
     guestUser: "Guest User",
   },
   dashboard: {
@@ -26,8 +25,6 @@ const en: Dictionary = {
     newEntryTitle: "New entry",
     editMemoryTitle: "✨ Edit memory",
     endOfMemories: "You've reached the end of your memories.",
-    nosyIntro: "Public entries from other members, most-watched first.",
-    nosyEmpty: "No one's posted anything public yet. Check back later!",
     deleteEntryTitle: "Delete this entry?",
     deleteEntryDescription:
       "This entry will be permanently removed from your timeline. Are you sure you want to delete it?",

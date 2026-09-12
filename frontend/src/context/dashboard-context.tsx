@@ -9,13 +9,13 @@ import { useLocale } from "@/context/locale-context"
 import { translateError } from "@/lib/i18n"
 import { extractHashtags } from "@/lib/hashtags"
 
-// Shared across the four dashboard routes (/, /hashtags, /friends, /nosy) —
+// Shared across the three dashboard routes (/, /hashtags, /friends) —
 // entries/pagination and the entry create/edit + delete-confirmation dialogs
 // are the same underlying state and UI regardless of which route triggered
 // them (e.g. editing a card from the Hashtag explorer opens the exact same
 // dialog Home's own cards do), so this lives one level up in
-// (dashboard)/layout.tsx rather than being duplicated per-route. Friends and
-// Nosy don't touch this at all — they have their own independent state.
+// (dashboard)/layout.tsx rather than being duplicated per-route. Friends
+// doesn't touch this at all — it has its own independent state.
 interface DashboardContextValue {
   entries: Entry[]
   hasMore: boolean
@@ -27,7 +27,7 @@ interface DashboardContextValue {
   openHashtag: (tag: string) => void
   // Home's own grid/single toggle — lives here (not local to the home page)
   // only because the shared layout's right-lane/right-bar reservation needs
-  // to react to it; hashtags/friends/nosy never read this.
+  // to react to it; hashtags/friends never read this.
   feedLayout: "grid" | "single"
   setFeedLayout: (layout: "grid" | "single") => void
   selectedEntry: Entry | null
@@ -101,7 +101,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   )
 
   // Primes the shared feed once a token is available, regardless of which
-  // of the four dashboard routes happens to be mounted first — the timeline
+  // of the three dashboard routes happens to be mounted first — the timeline
   // sidebar (rendered on all of them) depends on this too, not just the
   // home/hashtags pages. Deliberately keyed on `token` alone so it fires
   // once, not on every entries/hasMore change.

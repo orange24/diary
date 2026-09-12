@@ -20,19 +20,7 @@ type EntryHandler struct {
 	DB *sql.DB
 }
 
-// normalizeAudience falls back to "private" for anything the DB's CHECK
-// constraint wouldn't accept, so a missing/typo'd value from an older
-// client can't fail the insert/update outright.
-func normalizeAudience(audience string) string {
-	switch audience {
-	case "friend", "public":
-		return audience
-	default:
-		return "private"
-	}
-}
-
-// 1. GetEntries: ของตัวเอง + ของเพื่อนที่ tag เราไว้และเปิดเป็น public/friend
+// 1. GetEntries: ของตัวเอง + ของเพื่อนที่ tag เราไว้
 func (h *EntryHandler) GetEntries(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
@@ -48,23 +36,21 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	var username string
 	_ = h.DB.QueryRow("SELECT username FROM users WHERE id = $1", userID).Scan(&username)
 
-	// Own entries always show. A friend's entry also shows once it (a) is
-	// marked public or friend-visible, (b) tags this user by @username, (c)
-	// the poster is an accepted friend, and (d) — for friend-visible entries
-	// specifically — this viewer isn't excluded by the author's friend-group
-	// scoping: an entry with no entry_friend_groups rows at all is "all
-	// friends" (unrestricted); one with rows requires the viewer to belong
-	// to at least one of them. Public entries skip (d) entirely — groups
-	// only ever narrow "friend" visibility, never "public". Skipped
-	// entirely if the username lookup failed, rather than risk a pattern
-	// that accidentally matches everything.
+	// Own entries always show. A friend's entry also shows once it (a) tags
+	// this user by @username, (b) the poster is an accepted friend, and (c)
+	// this viewer isn't excluded by the author's friend-group scoping: an
+	// entry with no entry_friend_groups rows at all is "all friends"
+	// (unrestricted); one with rows requires the viewer to belong to at
+	// least one of them. Every entry is otherwise private to its owner —
+	// being tagged is what grants visibility, not a manual audience
+	// setting. Skipped entirely if the username lookup failed, rather than
+	// risk a pattern that accidentally matches everything.
 	mergeFriendsClause := ""
 	args := []interface{}{userID, limit, offset}
 	if username != "" {
 		mergeFriendsClause = `
 			     OR (
-			       e.audience IN ('public', 'friend')
-			       AND e.layout::text ~ $4
+			       e.layout::text ~ $4
 			       AND EXISTS (
 			         SELECT 1 FROM friendships f
 			         WHERE f.status = 'accepted'
@@ -72,8 +58,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 			             OR (f.addressee_id = $1 AND f.requester_id = e.user_id))
 			       )
 			       AND (
-			         e.audience = 'public'
-			         OR NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = e.id)
+			         NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = e.id)
 			         OR EXISTS (
 			           SELECT 1 FROM entry_friend_groups efg
 			           JOIN friend_group_members fgm ON fgm.group_id = efg.group_id
@@ -86,16 +71,15 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 
 	// A Contact's @handle also counts as a mention once the OTHER party has
 	// approved linking that contact to their real account (see
-	// contact_handler.go) — same friendship + audience/group visibility
-	// rules as a direct @username mention above, just resolved through the
-	// contacts table instead of the viewer's own username. Handles are
-	// constrained (migration 0008's CHECK) to a charset with no regex
-	// metacharacters, so concatenating one directly into the pattern here
-	// is safe. No new $N params needed — only ever references $1 (userID).
+	// contact_handler.go) — same friendship + group visibility rules as a
+	// direct @username mention above, just resolved through the contacts
+	// table instead of the viewer's own username. Handles are constrained
+	// (migration 0008's CHECK) to a charset with no regex metacharacters,
+	// so concatenating one directly into the pattern here is safe. No new
+	// $N params needed — only ever references $1 (userID).
 	contactMentionClause := `
 		     OR (
-		       e.audience IN ('public', 'friend')
-		       AND EXISTS (
+		       EXISTS (
 		         SELECT 1 FROM contacts ct
 		         WHERE ct.owner_id = e.user_id
 		           AND ct.linked_user_id = $1
@@ -109,8 +93,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 		             OR (f.addressee_id = $1 AND f.requester_id = e.user_id))
 		       )
 		       AND (
-		         e.audience = 'public'
-		         OR NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = e.id)
+		         NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = e.id)
 		         OR EXISTS (
 		           SELECT 1 FROM entry_friend_groups efg
 		           JOIN friend_group_members fgm ON fgm.group_id = efg.group_id
@@ -124,7 +107,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	// would silently stamp it as UTC and shift it when the frontend
 	// re-parses it as local time. to_char keeps it a plain string so the
 	// literal value the user entered round-trips unchanged.
-	query := `SELECT e.id, e.title, e.content, to_char(e.created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id, COALESCE(u.profile_picture, ''), COALESCE(u.slug, '')
+	query := `SELECT e.id, e.title, e.content, to_char(e.created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(e.created_by, ''), e.images, e.layout, e.user_id, COALESCE(u.profile_picture, ''), COALESCE(u.slug, '')
 			  FROM entries e
 			  LEFT JOIN users u ON u.id = e.user_id
 			  WHERE e.user_id = $1` + mergeFriendsClause + contactMentionClause + `
@@ -142,7 +125,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	for rows.Next() {
 		var e models.Entry
 		var layoutStr sql.NullString
-		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID, &e.CreatedByAvatar, &e.CreatedBySlug)
+		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.UserID, &e.CreatedByAvatar, &e.CreatedBySlug)
 		if err != nil {
 			log.Printf("GetEntries scan error: %v", err)
 			apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
@@ -158,10 +141,9 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 
 // setEntryFriendGroups replaces which of the caller's own friend_groups an
 // entry is scoped to. Pass a nil/empty groupIDs to clear scoping entirely
-// (the "all friends" / not-friend-audience state). Any id in groupIDs the
-// caller doesn't own is silently dropped rather than erroring, matching
-// normalizeAudience's "fall back, don't fail" style for client-supplied
-// values.
+// (the "all friends" state — any tagged friend can see it). Any id in
+// groupIDs the caller doesn't own is silently dropped rather than
+// erroring, a "fall back, don't fail" style for client-supplied values.
 func (h *EntryHandler) setEntryFriendGroups(entryID int, userID interface{}, groupIDs []int) error {
 	if _, err := h.DB.Exec(`DELETE FROM entry_friend_groups WHERE entry_id = $1`, entryID); err != nil {
 		return err
@@ -175,69 +157,6 @@ func (h *EntryHandler) setEntryFriendGroups(entryID int, userID interface{}, gro
 		entryID, pq.Array(groupIDs), userID,
 	)
 	return err
-}
-
-// 1b. GetNosyFeed: public entries from OTHER users, ranked by unique-viewer
-// count then by most recent update — "nosy mode". Viewing a page of results
-// also records this viewer against every entry on it (entry_views, deduped
-// by primary key), which is what makes the ranking possible in the first
-// place: there's no separate "mark as viewed" endpoint, appearing in this
-// feed IS the view.
-func (h *EntryHandler) GetNosyFeed(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	offset := (page - 1) * limit
-
-	userID := c.MustGet("user_id")
-
-	query := `SELECT e.id, e.title, e.content, to_char(e.created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id, COALESCE(u.profile_picture, ''), COALESCE(u.slug, ''), COALESCE(v.view_count, 0)
-			  FROM entries e
-			  LEFT JOIN users u ON u.id = e.user_id
-			  LEFT JOIN (
-			    SELECT entry_id, COUNT(*) AS view_count FROM entry_views GROUP BY entry_id
-			  ) v ON v.entry_id = e.id
-			  WHERE e.audience = 'public' AND e.user_id != $1
-			  ORDER BY COALESCE(v.view_count, 0) DESC, e.updated_at DESC
-			  LIMIT $2 OFFSET $3`
-
-	rows, err := h.DB.Query(query, userID, limit, offset)
-	if err != nil {
-		log.Printf("GetNosyFeed query error: %v", err)
-		apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
-		return
-	}
-	defer rows.Close()
-
-	var entries []models.Entry = []models.Entry{}
-	for rows.Next() {
-		var e models.Entry
-		var layoutStr sql.NullString
-		err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID, &e.CreatedByAvatar, &e.CreatedBySlug, &e.ViewCount)
-		if err != nil {
-			log.Printf("GetNosyFeed scan error: %v", err)
-			apierr.JSON(c, 500, apierr.InternalError, "Something went wrong")
-			return
-		}
-		if layoutStr.Valid {
-			e.Layout = json.RawMessage(layoutStr.String)
-		}
-		entries = append(entries, e)
-	}
-
-	// Record this page as viewed by this user. Best-effort: a failure here
-	// shouldn't turn a successful feed load into an error response, since
-	// the view record is a side effect of reading, not the point of the
-	// request.
-	for _, e := range entries {
-		if _, err := h.DB.Exec(
-			"INSERT INTO entry_views (entry_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-			e.ID, userID,
-		); err != nil {
-			log.Printf("GetNosyFeed view-record error (entry %d): %v", e.ID, err)
-		}
-	}
-
-	c.JSON(200, entries)
 }
 
 // 2. CreateEntry: ผูก user_id ตอนสร้าง
@@ -254,7 +173,6 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 	if len(input.Layout) > 0 {
 		layoutParam = string(input.Layout)
 	}
-	input.Audience = normalizeAudience(input.Audience)
 
 	// A blank/omitted date falls back to CURRENT_TIMESTAMP; the frontend's
 	// date picker normally always sends one.
@@ -264,11 +182,11 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 	}
 
 	// เพิ่ม user_id และ layout ลงใน INSERT query
-	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout, audience, created_date)
-              VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, COALESCE($8, CURRENT_TIMESTAMP))
+	query := `INSERT INTO entries (title, content, created_by, images, user_id, layout, created_date)
+              VALUES ($1, $2, $3, $4, $5, $6::jsonb, COALESCE($7, CURRENT_TIMESTAMP))
               RETURNING id, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS')`
 
-	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam, input.Audience, createdDateParam).
+	err := h.DB.QueryRow(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), userID, layoutParam, createdDateParam).
 		Scan(&input.ID, &input.CreatedDate)
 
 	if err != nil {
@@ -277,16 +195,9 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 		return
 	}
 
-	// Group scoping only ever applies to "friend"-audience entries — any
-	// group ids sent alongside a different audience are dropped.
-	groupIDsToSet := input.FriendGroupIDs
-	if input.Audience != "friend" {
-		groupIDsToSet = nil
-	}
-	if err := h.setEntryFriendGroups(input.ID, userID, groupIDsToSet); err != nil {
+	if err := h.setEntryFriendGroups(input.ID, userID, input.FriendGroupIDs); err != nil {
 		log.Printf("CreateEntry group-scope error: %v", err)
 	}
-	input.FriendGroupIDs = groupIDsToSet
 
 	c.JSON(200, input)
 }
@@ -327,7 +238,6 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 	if len(input.Layout) > 0 {
 		layoutParam = string(input.Layout)
 	}
-	input.Audience = normalizeAudience(input.Audience)
 
 	// A blank/omitted date leaves the existing created_date untouched.
 	var createdDateParam interface{}
@@ -335,9 +245,9 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 		createdDateParam = input.CreatedDate
 	}
 
-	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb, audience = $6, created_date = COALESCE($7, created_date), updated_at = CURRENT_TIMESTAMP
-			  WHERE id = $8 AND user_id = $9`
-	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, input.Audience, createdDateParam, id, userID)
+	query := `UPDATE entries SET title = $1, content = $2, created_by = $3, images = $4, layout = $5::jsonb, created_date = COALESCE($6, created_date), updated_at = CURRENT_TIMESTAMP
+			  WHERE id = $7 AND user_id = $8`
+	res, err := h.DB.Exec(query, input.Title, input.Content, input.CreatedBy, pq.Array(input.Images), layoutParam, createdDateParam, id, userID)
 
 	if err != nil {
 		log.Printf("UpdateEntry error: %v", err)
@@ -352,11 +262,7 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 	}
 
 	entryID, _ := strconv.Atoi(id)
-	groupIDsToSet := input.FriendGroupIDs
-	if input.Audience != "friend" {
-		groupIDsToSet = nil
-	}
-	if err := h.setEntryFriendGroups(entryID, userID, groupIDsToSet); err != nil {
+	if err := h.setEntryFriendGroups(entryID, userID, input.FriendGroupIDs); err != nil {
 		log.Printf("UpdateEntry group-scope error: %v", err)
 	}
 
@@ -369,13 +275,13 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 	userID := c.MustGet("user_id")
 	var e models.Entry
 
-	query := `SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), created_by, images, layout, audience,
+	query := `SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), created_by, images, layout,
 			  COALESCE((SELECT array_agg(group_id) FROM entry_friend_groups WHERE entry_id = entries.id), ARRAY[]::int[])
 			  FROM entries WHERE id = $1 AND user_id = $2`
 	var layoutStr sql.NullString
 	var groupIDs pq.Int64Array
 	err := h.DB.QueryRow(query, id, userID).
-		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &groupIDs)
+		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &groupIDs)
 	if err == nil {
 		if layoutStr.Valid {
 			e.Layout = json.RawMessage(layoutStr.String)

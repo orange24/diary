@@ -6,11 +6,6 @@ import { apiError } from "@/lib/api-error";
 // ✅ แก้ไขพอร์ตให้ตรงกับ Docker (9090)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090";
 
-// Who can see an entry — "friend"/"public" entries from a friend who tags
-// this user get merged into their feed (see getEntries), "private" never
-// leaves the owner's own feed.
-export type EntryAudience = "private" | "friend" | "public";
-
 export interface Entry {
   id: number;
   title: string;
@@ -19,7 +14,6 @@ export interface Entry {
   created_by: string;
   images: string[];
   layout?: ScrapbookLayout | null;
-  audience: EntryAudience;
   // The entry's owner — lets the UI tell its own entries apart from a
   // friend's entry merged into the same feed.
   user_id: number;
@@ -29,13 +23,10 @@ export interface Entry {
   // The author's public profile slug, used to link their name in the feed
   // card to /<slug>. Only populated by getEntries.
   created_by_slug?: string;
-  // Unique-viewer count. Only populated by getNosyFeed — home-feed entries
-  // never carry it, which is what tells a card whether to show the badge.
-  view_count?: number;
-  // Which of the author's friend groups this entry is scoped to when
-  // audience === "friend" — empty/absent means "all friends". Only ever
-  // populated for the entry's own owner (GetEntry, create/update response),
-  // never exposed to other viewers.
+  // Which of the author's friend groups this entry is scoped to —
+  // empty/absent means "all friends" (any tagged friend can see it). Only
+  // ever populated for the entry's own owner (GetEntry, create/update
+  // response), never exposed to other viewers.
   friend_group_ids?: number[];
 }
 
@@ -92,31 +83,6 @@ export const getEntries = async (page: number, limit: number, token: string): Pr
   } catch (error) {
     console.error("Network Error:", error);
     return []; // 👈 กันพัง
-  }
-}
-
-// "Nosy mode" — other users' public entries, ranked by unique-viewer count
-// then recency. Fetching a page also records this viewer against every
-// entry on it server-side (see backend's GetNosyFeed) — there's no
-// separate "mark as viewed" call.
-export const getNosyFeed = async (page: number, limit: number, token: string): Promise<Entry[]> => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/nosy?page=${page}&limit=${limit}`, {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) {
-      console.error("API Error Status:", res.status);
-      return [];
-    }
-
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Network Error:", error);
-    return [];
   }
 }
 

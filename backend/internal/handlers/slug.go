@@ -15,7 +15,7 @@ var reservedSlugs = map[string]bool{
 	"login": true, "register": true, "profile": true,
 	"api": true, "entries": true, "friends": true, "users": true,
 	"upload": true, "uploads": true, "static": true, "": true,
-	"hashtags": true, "nosy": true,
+	"hashtags": true,
 }
 
 func slugify(s string) string {

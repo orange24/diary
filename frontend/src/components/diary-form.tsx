@@ -4,22 +4,15 @@ import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
 import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextElement } from "@/types/scrapbook"
-import { createEntry, updateEntry, Entry, EntryAudience } from "@/services/api"
+import { createEntry, updateEntry, Entry } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
 import { FriendGroup, FriendUser, getFriendGroups, getFriends } from "@/services/friends"
 import { Contact, getContacts } from "@/services/contacts"
 import { MentionTarget } from "@/lib/mentions"
 import { useLocale } from "@/context/locale-context"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Loader2, Lock, Users, Globe, X } from "lucide-react"
+import { Loader2, X } from "lucide-react"
 import { toast } from "sonner"
-
-const AUDIENCE_OPTIONS: { value: EntryAudience; label: string; icon: typeof Lock }[] = [
-  { value: "private", label: "Only me", icon: Lock },
-  { value: "friend", label: "Friends", icon: Users },
-  { value: "public", label: "Public", icon: Globe },
-]
 
 // Formats a Date as the "YYYY-MM-DD" an <input type="date"> needs, in the
 // browser's local timezone (toISOString() alone would shift by the UTC
@@ -74,9 +67,8 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
   // list right before render (see mentionTargets).
   const [friends, setFriends] = useState<FriendUser[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [audience, setAudience] = useState<EntryAudience>(initialData?.audience ?? "private")
-  // Which of the author's friend groups this post is scoped to when
-  // audience is "friend" — empty means "all friends" (the default).
+  // Which of the author's friend groups this post is scoped to — empty
+  // means "all friends" (the default): any tagged friend can see it.
   const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([])
   const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>(initialData?.friend_group_ids ?? [])
   const [createdDate, setCreatedDate] = useState<string>(() =>
@@ -133,7 +125,6 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       nextElements.filter((el): el is ImageScrapElement => el.type === "image").map((el) => el.src)
     )
     setGalleryImages((initialData?.images || []).filter((src) => !canvasSrcs.has(src)))
-    setAudience(initialData?.audience ?? "private")
     setSelectedGroupIds(initialData?.friend_group_ids ?? [])
     const initialDateObj = initialData?.created_date ? new Date(initialData.created_date) : new Date()
     setCreatedDate(toDateInputValue(initialDateObj))
@@ -159,8 +150,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         images,
         created_by: "Watchara",
         layout: { pageWidth: PAGE_WIDTH, elements },
-        audience,
-        friend_group_ids: audience === "friend" ? selectedGroupIds : [],
+        friend_group_ids: selectedGroupIds,
         created_date: `${createdDate}T${createdTime}:00`,
       };
 
@@ -235,25 +225,13 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         </div>
       )}
 
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">Who can see this post</label>
-        <Select value={audience} onValueChange={(v) => setAudience(v as EntryAudience)}>
-          <SelectTrigger className="w-full rounded-xl">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {AUDIENCE_OPTIONS.map(({ value, label, icon: Icon }) => (
-              <SelectItem key={value} value={value}>
-                <Icon className="mr-2 size-4" /> {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {audience === "friend" && friendGroups.length > 0 && (
+      {friendGroups.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-foreground">Share with friend groups</label>
           <div className="space-y-2 rounded-xl border border-border p-3">
             <p className="text-xs text-muted-foreground">
-              Share with everyone, or just specific group(s) — leave none checked for all friends.
+              Only friends you @-tag above ever see this entry. Optionally narrow that further to
+              specific group(s) — leave none checked to allow any tagged friend.
             </p>
             <div className="flex flex-wrap gap-2">
               {friendGroups.map((g) => {
@@ -279,8 +257,8 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
               })}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Button
         type="submit"

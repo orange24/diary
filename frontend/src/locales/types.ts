@@ -54,7 +54,6 @@ export interface Dictionary {
     navHome: string
     navHashtag: string
     navFriends: string
-    navNosy: string
     guestUser: string
   }
   dashboard: {
@@ -66,8 +65,6 @@ export interface Dictionary {
     newEntryTitle: string
     editMemoryTitle: string
     endOfMemories: string
-    nosyIntro: string
-    nosyEmpty: string
     deleteEntryTitle: string
     deleteEntryDescription: string
     deleteEntryCancel: string

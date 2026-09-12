@@ -62,7 +62,6 @@ func main() {
 	})
 	{
 		authorized.GET("/entries", entryHandler.GetEntries)
-		authorized.GET("/nosy", entryHandler.GetNosyFeed)
 		authorized.POST("/entries", entryHandler.CreateEntry)
 		authorized.DELETE("/entries/:id", entryHandler.DeleteEntry)
 		authorized.PUT("/entries/:id", entryHandler.UpdateEntry)

@@ -11,8 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, Lock, Users, Globe, User, Eye } from "lucide-react"
-import { Entry, EntryAudience } from "@/services/api"
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, User } from "lucide-react"
+import { Entry } from "@/services/api"
 // ✅ 1. Import DOMPurify
 import DOMPurify from "isomorphic-dompurify"
 import { ScrapbookPreview } from "@/components/scrapbook/ScrapbookPreview"
@@ -37,24 +37,6 @@ interface DiaryGridProps {
   // "grid" (default) packs entries into the responsive masonry columns
   // below; "single" forces one long column regardless of screen width.
   layout?: "grid" | "single"
-  // The audience icon + top-border accent exist to distinguish public/
-  // friend/private entries in a MIXED feed — pointless noise in a feed
-  // that's already scoped to public-only (Nosy mode), so callers there
-  // can turn it off entirely.
-  hideAudienceBadge?: boolean
-  // Default masonry packs columns independently (no gap under a short
-  // card), which reads left-to-right on the FIRST row but drifts out of
-  // row alignment after that as columns' heights diverge. Nosy mode wants
-  // the opposite trade-off — a literal grid where every row lines up
-  // (accepting the whitespace under a shorter card in the same row) so
-  // browsing reads strictly left-to-right, top-to-bottom.
-  rowAligned?: boolean
-}
-
-const AUDIENCE_META: Record<EntryAudience, { label: string; icon: typeof Lock }> = {
-  private: { label: "Only me", icon: Lock },
-  friend: { label: "Friends", icon: Users },
-  public: { label: "Public", icon: Globe },
 }
 
 // ✅ 2. สร้าง Helper Function สำหรับกรอง HTML (วางไว้นอก Component)
@@ -106,8 +88,6 @@ export function DiaryGrid({
   onDelete,
   onHashtagClick,
   layout = "grid",
-  hideAudienceBadge = false,
-  rowAligned = false,
 }: DiaryGridProps) {
   const { locale, t } = useLocale()
   const [isOpen, setIsOpen] = useState(false)
@@ -188,37 +168,19 @@ export function DiaryGrid({
         <div key={entry.id}>
           {/* Date now sits above the card (not overlaid on its content) —
               the one piece of metadata that stays visible always.
-              Everything else (author, audience, the 3-dot menu) stays out
-              of the card's way by default so it reads as pure content,
-              surfacing on the right only on hover. */}
+              Everything else (author, the 3-dot menu) stays out of the
+              card's way by default so it reads as pure content, surfacing
+              on the right only on hover. */}
           <div className="mb-1.5 flex items-center justify-between gap-1 text-[14px] text-[#9b9b9b]">
             <div className="flex items-center gap-1">
-              {!hideAudienceBadge && entry.audience === "public" && <Globe className="size-3.5 text-blue-500" />}
-              {!hideAudienceBadge && entry.audience === "friend" && <Users className="size-3.5 text-blue-300" />}
-              {!hideAudienceBadge && entry.audience === "private" && <Lock className="size-3.5 text-pink-300" />}
               {formatEntryDate(entry.created_date, t, locale)}
             </div>
-            {/* Only Nosy-feed entries carry a view_count — home-feed entries
-                never do, so this badge is naturally absent everywhere else. */}
-            {entry.view_count !== undefined && (
-              <span className="flex items-center gap-1 text-xs">
-                <Eye className="size-3.5" /> {entry.view_count}
-              </span>
-            )}
           </div>
 
           <Card
             id={`entry-${entry.id}`}
             className={`group relative block gap-0 overflow-hidden p-0 shadow-sm transition-all duration-300 hover:shadow-md scroll-mt-24 ${
               isOwn ? "bg-card" : "bg-[#fdf2f8]"
-            } ${
-              hideAudienceBadge
-                ? ""
-                : entry.audience === "public"
-                  ? "border-t-4 border-t-blue-500"
-                  : entry.audience === "friend"
-                    ? "border-t-4 border-t-blue-300"
-                    : "border-t-4 border-t-gray-300"
             }`}
           >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -235,14 +197,6 @@ export function DiaryGrid({
                   </Avatar>
                   <div className="flex flex-col leading-tight">
                     <span className="text-sm font-bold text-white">{entry.created_by || 'Anonymous'}</span>
-                    {entry.audience && (() => {
-                      const { label, icon: Icon } = AUDIENCE_META[entry.audience]
-                      return (
-                        <span className="flex items-center gap-1 text-[10px] font-medium text-white/80" title={label}>
-                          <Icon className="size-3" /> {label}
-                        </span>
-                      )
-                    })()}
                   </div>
                 </>
               )
@@ -349,27 +303,17 @@ export function DiaryGrid({
 
   return (
     <div>
-      {rowAligned && layout === "grid" ? (
-        // A literal CSS grid in natural DOM order — auto-placement already
-        // does exactly "left-to-right, top-to-bottom, each row's height set
-        // by its tallest cell" for free. items-start keeps each card its
-        // own natural height instead of stretching to fill the row.
-        <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {entries.map(renderEntry)}
-        </div>
-      ) : (
-        // Each column is an independent flex stack (renderEntry's items,
-        // assigned round-robin above) — true masonry packing since a short
-        // card is immediately followed by the next card in that same
-        // column, with no shared row height to leave a gap under it.
-        <div className="flex items-start gap-6">
-          {columnEntries.map((colEntries, colIndex) => (
-            <div key={colIndex} className="flex min-w-0 flex-1 flex-col gap-6">
-              {colEntries.map(renderEntry)}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Each column is an independent flex stack (renderEntry's items,
+          assigned round-robin above) — true masonry packing since a short
+          card is immediately followed by the next card in that same
+          column, with no shared row height to leave a gap under it. */}
+      <div className="flex items-start gap-6">
+        {columnEntries.map((colEntries, colIndex) => (
+          <div key={colIndex} className="flex min-w-0 flex-1 flex-col gap-6">
+            {colEntries.map(renderEntry)}
+          </div>
+        ))}
+      </div>
 
       {/* --- Full-content viewer --- */}
       <Dialog open={!!viewingEntry} onOpenChange={(open) => !open && setViewingEntry(null)}>

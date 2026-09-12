@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,9 +33,11 @@ type PublicProfileResponse struct {
 
 // GET /profile/:slug — a user's public-facing profile page: their info plus
 // whichever of their entries the requester is allowed to see. Viewing your
-// own slug returns everything; anyone else sees "public" entries always,
-// and "friend" entries only once they're an accepted friend of that user —
-// "private" entries never leave the owner's own feed.
+// own slug returns everything. Anyone else — even an accepted friend —
+// only sees entries where they're specifically @-tagged (by username or an
+// approved Contact handle), the same auto-visibility rule GetEntries uses
+// to merge a friend's tagged entries into your own feed; every entry is
+// otherwise private to its owner.
 func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 	requesterID := c.MustGet("user_id").(int)
 	slug := c.Param("slug")
@@ -69,14 +72,12 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 		).Scan(&p.IsFriend)
 	}
 
-	// For a friend's "friend"-audience entries specifically, also honor the
-	// author's friend-group scoping: no entry_friend_groups rows at all
-	// means "all friends" (unrestricted); otherwise the requester must
-	// belong to at least one referenced group. Public entries skip this —
-	// groups only ever narrow "friend" visibility, never "public".
-	groupCheck := ` AND (
-		audience = 'public'
-		OR NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = entries.id)
+	// A friend only sees entries where they're specifically tagged, also
+	// honoring the author's friend-group scoping: no entry_friend_groups
+	// rows at all means "all friends" (unrestricted); otherwise the
+	// requester must belong to at least one referenced group.
+	groupCheck := `(
+		NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = entries.id)
 		OR EXISTS (
 		  SELECT 1 FROM entry_friend_groups efg
 		  JOIN friend_group_members fgm ON fgm.group_id = efg.group_id
@@ -84,44 +85,63 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 		)
 	)`
 
-	var audienceFilter string
-	args := []interface{}{p.ID}
-	switch {
-	case p.IsSelf:
-		audienceFilter = "" // owner sees everything, including private
-	case p.IsFriend:
-		audienceFilter = " AND audience IN ('public', 'friend')" + groupCheck
-		args = append(args, requesterID)
-	default:
-		audienceFilter = " AND audience = 'public'"
-	}
+	// A stranger (not the owner, not a friend) never sees any entries —
+	// skip the query entirely rather than add a query condition that could
+	// never match.
+	var entries []models.Entry = []models.Entry{}
+	if p.IsSelf || p.IsFriend {
+		var entryFilter string
+		args := []interface{}{p.ID}
+		if p.IsSelf {
+			entryFilter = "" // owner sees everything
+		} else {
+			var requesterUsername string
+			_ = h.DB.QueryRow("SELECT username FROM users WHERE id = $1", requesterID).Scan(&requesterUsername)
 
-	rows, err := h.DB.Query(
-		`SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(created_by, ''), images, layout, audience, user_id
-		 FROM entries WHERE user_id = $1`+audienceFilter+`
-		 ORDER BY id DESC`,
-		args...,
-	)
-	if err != nil {
-		log.Printf("GetPublicProfile entries query error: %v", err)
-		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
-		return
-	}
-	defer rows.Close()
+			mentionClause := `EXISTS (
+				SELECT 1 FROM contacts ct
+				WHERE ct.owner_id = entries.user_id
+				  AND ct.linked_user_id = $2
+				  AND ct.link_status = 'accepted'
+				  AND entries.layout::text ~ ('@' || ct.handle || '\y')
+			  )`
+			args = append(args, requesterID)
+			if requesterUsername != "" {
+				mentionClause = "(entries.layout::text ~ $3 OR " + mentionClause + ")"
+				args = append(args, "@"+regexp.QuoteMeta(requesterUsername)+`\y`)
+			} else {
+				mentionClause = "(" + mentionClause + ")"
+			}
 
-	entries := []models.Entry{}
-	for rows.Next() {
-		var e models.Entry
-		var layoutStr sql.NullString
-		if err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &e.UserID); err != nil {
-			log.Printf("GetPublicProfile scan error: %v", err)
+			entryFilter = " AND " + mentionClause + " AND " + groupCheck
+		}
+
+		rows, err := h.DB.Query(
+			`SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(created_by, ''), images, layout, user_id
+			 FROM entries WHERE user_id = $1`+entryFilter+`
+			 ORDER BY id DESC`,
+			args...,
+		)
+		if err != nil {
+			log.Printf("GetPublicProfile entries query error: %v", err)
 			apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 			return
 		}
-		if layoutStr.Valid {
-			e.Layout = json.RawMessage(layoutStr.String)
+		defer rows.Close()
+
+		for rows.Next() {
+			var e models.Entry
+			var layoutStr sql.NullString
+			if err := rows.Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.UserID); err != nil {
+				log.Printf("GetPublicProfile scan error: %v", err)
+				apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
+				return
+			}
+			if layoutStr.Valid {
+				e.Layout = json.RawMessage(layoutStr.String)
+			}
+			entries = append(entries, e)
 		}
-		entries = append(entries, e)
 	}
 
 	c.JSON(http.StatusOK, PublicProfileResponse{Profile: p, Entries: entries})
