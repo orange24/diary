@@ -299,6 +299,7 @@ export default function DiaryDashboard() {
                     currentUserId={user?.userId}
                     onHashtagClick={openHashtag}
                     layout={nosyFeedLayout}
+                    hideAudienceBadge
                   />
                 )}
 

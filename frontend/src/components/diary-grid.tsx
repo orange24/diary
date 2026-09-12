@@ -37,6 +37,11 @@ interface DiaryGridProps {
   // "grid" (default) packs entries into the responsive masonry columns
   // below; "single" forces one long column regardless of screen width.
   layout?: "grid" | "single"
+  // The audience icon + top-border accent exist to distinguish public/
+  // friend/private entries in a MIXED feed — pointless noise in a feed
+  // that's already scoped to public-only (Nosy mode), so callers there
+  // can turn it off entirely.
+  hideAudienceBadge?: boolean
 }
 
 const AUDIENCE_META: Record<EntryAudience, { label: string; icon: typeof Lock }> = {
@@ -87,7 +92,15 @@ function useColumnCount() {
   return columns
 }
 
-export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagClick, layout = "grid" }: DiaryGridProps) {
+export function DiaryGrid({
+  entries,
+  currentUserId,
+  onEdit,
+  onDelete,
+  onHashtagClick,
+  layout = "grid",
+  hideAudienceBadge = false,
+}: DiaryGridProps) {
   const { locale, t } = useLocale()
   const [isOpen, setIsOpen] = useState(false)
   const [currentImages, setCurrentImages] = useState<string[]>([])
@@ -172,9 +185,9 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
               surfacing on the right only on hover. */}
           <div className="mb-1.5 flex items-center justify-between gap-1 text-[14px] text-[#9b9b9b]">
             <div className="flex items-center gap-1">
-              {entry.audience === "public" && <Globe className="size-3.5 text-blue-500" />}
-              {entry.audience === "friend" && <Users className="size-3.5 text-blue-300" />}
-              {entry.audience === "private" && <Lock className="size-3.5 text-pink-300" />}
+              {!hideAudienceBadge && entry.audience === "public" && <Globe className="size-3.5 text-blue-500" />}
+              {!hideAudienceBadge && entry.audience === "friend" && <Users className="size-3.5 text-blue-300" />}
+              {!hideAudienceBadge && entry.audience === "private" && <Lock className="size-3.5 text-pink-300" />}
               {formatEntryDate(entry.created_date, t, locale)}
             </div>
             {/* Only Nosy-feed entries carry a view_count — home-feed entries
@@ -191,11 +204,13 @@ export function DiaryGrid({ entries, currentUserId, onEdit, onDelete, onHashtagC
             className={`group relative block gap-0 overflow-hidden p-0 shadow-sm transition-all duration-300 hover:shadow-md scroll-mt-24 ${
               isOwn ? "bg-card" : "bg-[#fdf2f8]"
             } ${
-              entry.audience === "public"
-                ? "border-t-4 border-t-blue-500"
-                : entry.audience === "friend"
-                  ? "border-t-4 border-t-blue-300"
-                  : "border-t-4 border-t-gray-300"
+              hideAudienceBadge
+                ? ""
+                : entry.audience === "public"
+                  ? "border-t-4 border-t-blue-500"
+                  : entry.audience === "friend"
+                    ? "border-t-4 border-t-blue-300"
+                    : "border-t-4 border-t-gray-300"
             }`}
           >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-end gap-3 bg-gradient-to-b from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
