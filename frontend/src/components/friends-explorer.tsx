@@ -385,7 +385,7 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
     {
       id: "people",
       label:
-        incomingContactRequests.length > 0 ? `People (${incomingContactRequests.length})` : "People",
+        incomingContactRequests.length > 0 ? `Relationship (${incomingContactRequests.length})` : "Relationship",
     },
   ]
 
