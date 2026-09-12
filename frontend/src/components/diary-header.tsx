@@ -1,6 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon, Check } from "lucide-react"
@@ -43,27 +44,24 @@ function NosyIcon({ className }: { className?: string }) {
   )
 }
 
-export type DiaryView = "home" | "hashtags" | "friends" | "nosy"
-
 interface DiaryHeaderProps {
   onLogout?: () => void
   userName?: string
   userAvatar?: string
   userSlug?: string
-  activeView: DiaryView
-  onViewChange: (view: DiaryView) => void
 }
 
-export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeView, onViewChange }: DiaryHeaderProps) {
+export function DiaryHeader({ onLogout, userName, userAvatar, userSlug }: DiaryHeaderProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { setTheme, theme } = useTheme()
   const isDark = theme === "dark"
   const { locale, setLocale, t } = useLocale()
-  const navItems: { view: DiaryView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { view: "home", label: t("header.navHome"), icon: Home },
-    { view: "hashtags", label: t("header.navHashtag"), icon: Hash },
-    { view: "friends", label: t("header.navFriends"), icon: Users },
-    { view: "nosy", label: t("header.navNosy"), icon: NosyIcon },
+  const navItems: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { href: "/", label: t("header.navHome"), icon: Home },
+    { href: "/hashtags", label: t("header.navHashtag"), icon: Hash },
+    { href: "/friends", label: t("header.navFriends"), icon: Users },
+    { href: "/nosy", label: t("header.navNosy"), icon: NosyIcon },
   ]
 
   // สร้างชื่อย่อสำหรับ Avatar (เช่น Watchara Kittikum -> WK)
@@ -82,41 +80,33 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
         {/* Left Side: Logo & Title — clicking it returns to the home feed */}
-        <button
-          type="button"
-          onClick={() => {
-            onViewChange("home")
-            router.push("/")
-          }}
-          className="flex items-center gap-3"
-        >
+        <Link href="/" className="flex items-center gap-3">
           <div className="flex items-center justify-center size-10 rounded-xl bg-white shadow-lg">
             <BookOpen className="size-5 text-logo" />
           </div>
           <h1 className="text-xl font-bold tracking-tight uppercase text-white hidden md:block">
             Papymory
           </h1>
-        </button>
+        </Link>
 
         {/* Center: Home / Hashtag / Friends nav — plain spaced-out icons,
             Facebook-style, with an underline bar marking the active tab */}
         <nav className="flex h-full items-center gap-8 sm:gap-14">
-          {navItems.map(({ view, label, icon: Icon }) => (
-            <button
-              key={view}
-              type="button"
+          {navItems.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
               title={label}
-              onClick={() => onViewChange(view)}
               className={cn(
                 "relative flex h-full items-center px-2 transition-colors",
-                activeView === view ? "text-white" : "text-white/60 hover:text-white/90"
+                pathname === href ? "text-white" : "text-white/60 hover:text-white/90"
               )}
             >
               <Icon className="size-6" />
-              {activeView === view && (
+              {pathname === href && (
                 <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-white" />
               )}
-            </button>
+            </Link>
           ))}
         </nav>
 
