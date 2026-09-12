@@ -42,6 +42,13 @@ interface DiaryGridProps {
   // that's already scoped to public-only (Nosy mode), so callers there
   // can turn it off entirely.
   hideAudienceBadge?: boolean
+  // Default masonry packs columns independently (no gap under a short
+  // card), which reads left-to-right on the FIRST row but drifts out of
+  // row alignment after that as columns' heights diverge. Nosy mode wants
+  // the opposite trade-off — a literal grid where every row lines up
+  // (accepting the whitespace under a shorter card in the same row) so
+  // browsing reads strictly left-to-right, top-to-bottom.
+  rowAligned?: boolean
 }
 
 const AUDIENCE_META: Record<EntryAudience, { label: string; icon: typeof Lock }> = {
@@ -100,6 +107,7 @@ export function DiaryGrid({
   onHashtagClick,
   layout = "grid",
   hideAudienceBadge = false,
+  rowAligned = false,
 }: DiaryGridProps) {
   const { locale, t } = useLocale()
   const [isOpen, setIsOpen] = useState(false)
@@ -341,17 +349,27 @@ export function DiaryGrid({
 
   return (
     <div>
-      {/* Each column is an independent flex stack (renderEntry's items,
-          assigned round-robin above) — true masonry packing since a short
-          card is immediately followed by the next card in that same
-          column, with no shared row height to leave a gap under it. */}
-      <div className="flex items-start gap-6">
-        {columnEntries.map((colEntries, colIndex) => (
-          <div key={colIndex} className="flex min-w-0 flex-1 flex-col gap-6">
-            {colEntries.map(renderEntry)}
-          </div>
-        ))}
-      </div>
+      {rowAligned && layout === "grid" ? (
+        // A literal CSS grid in natural DOM order — auto-placement already
+        // does exactly "left-to-right, top-to-bottom, each row's height set
+        // by its tallest cell" for free. items-start keeps each card its
+        // own natural height instead of stretching to fill the row.
+        <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {entries.map(renderEntry)}
+        </div>
+      ) : (
+        // Each column is an independent flex stack (renderEntry's items,
+        // assigned round-robin above) — true masonry packing since a short
+        // card is immediately followed by the next card in that same
+        // column, with no shared row height to leave a gap under it.
+        <div className="flex items-start gap-6">
+          {columnEntries.map((colEntries, colIndex) => (
+            <div key={colIndex} className="flex min-w-0 flex-1 flex-col gap-6">
+              {colEntries.map(renderEntry)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* --- Full-content viewer --- */}
       <Dialog open={!!viewingEntry} onOpenChange={(open) => !open && setViewingEntry(null)}>

@@ -83,6 +83,7 @@ export default function NosyPage() {
           onHashtagClick={openHashtag}
           layout={nosyFeedLayout}
           hideAudienceBadge
+          rowAligned
         />
       )}
 
