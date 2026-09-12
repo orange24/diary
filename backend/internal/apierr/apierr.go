@@ -35,6 +35,10 @@ const (
 	InvalidGroupID        = "invalid_group_id"
 	GroupNotFound         = "group_not_found"
 	NotYourFriend         = "not_your_friend"
+	InvalidContactID      = "invalid_contact_id"
+	ContactNotFound       = "contact_not_found"
+	ContactAlreadyLinked  = "contact_already_linked"
+	HandleTaken           = "handle_taken"
 )
 
 // JSON responds with both the stable code (for the frontend to translate)

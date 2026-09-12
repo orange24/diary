@@ -5,8 +5,7 @@ import { createPortal } from "react-dom"
 import DOMPurify from "isomorphic-dompurify"
 import { TextScrapElement, PAGE_WIDTH } from "@/types/scrapbook"
 import { linkifyHashtags, hashtagFromClick } from "@/lib/hashtags"
-import { linkifyMentions } from "@/lib/mentions"
-import { FriendUser } from "@/services/friends"
+import { linkifyMentions, MentionTarget } from "@/lib/mentions"
 import { MentionAutocomplete } from "./MentionAutocomplete"
 import { HashtagAutocomplete } from "./HashtagAutocomplete"
 
@@ -166,8 +165,9 @@ interface TextElementProps {
   // Only wired up for read-only previews (editable=false) — inside an
   // open editor a hashtag is just text being typed, not a link to follow.
   onHashtagClick?: (tag: string) => void
-  // Friends to suggest when typing "@" — only meaningful while editing.
-  friends?: FriendUser[]
+  // Friends and/or placeholder Contacts to suggest when typing "@" — only
+  // meaningful while editing.
+  mentionTargets?: MentionTarget[]
   // Hashtags already used elsewhere, suggested when typing "#".
   hashtagSuggestions?: string[]
 }
@@ -180,7 +180,7 @@ export function TextElement({
   onFinishEditing,
   onResize,
   onHashtagClick,
-  friends,
+  mentionTargets,
   hashtagSuggestions,
 }: TextElementProps) {
   const ref = useRef<HTMLDivElement>(null)
@@ -270,7 +270,8 @@ export function TextElement({
     const rect = range.getBoundingClientRect()
     const pos = { top: rect.bottom + 4, left: rect.left }
 
-    const mentionMatch = friends && friends.length > 0 ? matchTrigger(text, range.startOffset, "@") : null
+    const mentionMatch =
+      mentionTargets && mentionTargets.length > 0 ? matchTrigger(text, range.startOffset, "@") : null
     if (mentionMatch) {
       mentionAnchorRef.current = { node: container as Text, start: mentionMatch.start, end: mentionMatch.end }
       setMentionQuery(mentionMatch.query)
@@ -325,10 +326,10 @@ export function TextElement({
     selection?.addRange(range)
   }
 
-  const insertMention = (friend: FriendUser) => {
+  const insertMention = (target: MentionTarget) => {
     const anchor = mentionAnchorRef.current
     if (!anchor || !ref.current) return
-    replaceAnchor(anchor, `@${friend.username} `)
+    replaceAnchor(anchor, `@${target.insertText} `)
     setMentionQuery(null)
     ref.current.focus()
     commitText()
@@ -392,11 +393,11 @@ export function TextElement({
           portal these popovers would anchor to that scaled box instead of
           the real viewport, landing far from the caret. */}
       {mentionQuery !== null &&
-        friends &&
+        mentionTargets &&
         createPortal(
           <MentionAutocomplete
             query={mentionQuery}
-            friends={friends}
+            suggestions={mentionTargets}
             position={mentionPos}
             onSelect={insertMention}
           />,

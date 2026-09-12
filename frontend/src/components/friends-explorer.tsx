@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Check, Pencil, Plus, Search, Trash2, UserMinus, UserPlus, X } from "lucide-react"
+import { Check, Link2, Pencil, Plus, Search, Trash2, UserMinus, UserPlus, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,13 +24,25 @@ import {
   searchUsers,
   sendFriendRequest,
 } from "@/services/friends"
+import {
+  Contact,
+  ContactLinkRequestItem,
+  acceptContactLink,
+  createContact,
+  declineContactLink,
+  deleteContact,
+  getContactLinkRequests,
+  getContacts,
+  requestContactLink,
+  updateContact,
+} from "@/services/contacts"
 import { toast } from "sonner"
 
 interface FriendsExplorerProps {
   token: string | undefined
 }
 
-type Tab = "friends" | "requests" | "search" | "groups"
+type Tab = "friends" | "requests" | "search" | "groups" | "people"
 
 function getInitials(name: string) {
   return (
@@ -88,6 +100,15 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
   const [newGroupName, setNewGroupName] = useState("")
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState("")
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [contactRequests, setContactRequests] = useState<ContactLinkRequestItem[]>([])
+  const [newContactName, setNewContactName] = useState("")
+  const [newContactRelationship, setNewContactRelationship] = useState("")
+  const [editingContactId, setEditingContactId] = useState<number | null>(null)
+  const [editingContactName, setEditingContactName] = useState("")
+  const [editingContactRelationship, setEditingContactRelationship] = useState("")
+  const [editingContactHandle, setEditingContactHandle] = useState("")
+  const [linkingContactId, setLinkingContactId] = useState<number | null>(null)
 
   const loadFriends = useCallback(async () => {
     if (!token) return
@@ -116,11 +137,31 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
     }
   }, [token])
 
+  const loadContacts = useCallback(async () => {
+    if (!token) return
+    try {
+      setContacts(await getContacts(token))
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }, [token])
+
+  const loadContactRequests = useCallback(async () => {
+    if (!token) return
+    try {
+      setContactRequests(await getContactLinkRequests(token))
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }, [token])
+
   useEffect(() => {
     loadFriends()
     loadRequests()
     loadGroups()
-  }, [loadFriends, loadRequests, loadGroups])
+    loadContacts()
+    loadContactRequests()
+  }, [loadFriends, loadRequests, loadGroups, loadContacts, loadContactRequests])
 
   useEffect(() => {
     if (tab !== "search" || !query.trim() || !token) {
@@ -238,6 +279,100 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
     }
   }
 
+  const handleCreateContact = async () => {
+    const name = newContactName.trim()
+    if (!token || !name) return
+    try {
+      const contact = await createContact(name, newContactRelationship.trim(), token)
+      setContacts((prev) => [...prev, contact])
+      setNewContactName("")
+      setNewContactRelationship("")
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
+  const startEditContact = (contact: Contact) => {
+    setEditingContactId(contact.id)
+    setEditingContactName(contact.name)
+    setEditingContactRelationship(contact.relationship)
+    setEditingContactHandle(contact.handle)
+  }
+
+  const saveEditContact = async (contactId: number) => {
+    const name = editingContactName.trim()
+    const handle = editingContactHandle.trim()
+    if (!token || !name || !handle) return
+    try {
+      await updateContact(contactId, { name, relationship: editingContactRelationship.trim(), handle }, token)
+      setContacts((prev) =>
+        prev.map((c) =>
+          c.id === contactId ? { ...c, name, relationship: editingContactRelationship.trim(), handle } : c
+        )
+      )
+      setEditingContactId(null)
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
+  const handleDeleteContact = async (contactId: number) => {
+    if (!token) return
+    try {
+      await deleteContact(contactId, token)
+      setContacts((prev) => prev.filter((c) => c.id !== contactId))
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
+  const handleRequestLink = async (contactId: number, targetUserId: number) => {
+    if (!token) return
+    try {
+      await requestContactLink(contactId, targetUserId, token)
+      setLinkingContactId(null)
+      loadContacts()
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
+  // Cancelling your own outgoing request and declining someone else's
+  // incoming one are the same call — the backend allows either party to
+  // clear a pending link.
+  const handleCancelOwnLink = async (contactId: number) => {
+    if (!token) return
+    try {
+      await declineContactLink(contactId, token)
+      loadContacts()
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
+  const handleAcceptIncoming = async (contactId: number) => {
+    if (!token) return
+    try {
+      await acceptContactLink(contactId, token)
+      loadContactRequests()
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
+  const handleDeclineIncoming = async (contactId: number) => {
+    if (!token) return
+    try {
+      await declineContactLink(contactId, token)
+      loadContactRequests()
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
+  const incomingContactRequests = contactRequests.filter((r) => r.direction === "incoming")
+  const outgoingContactRequests = contactRequests.filter((r) => r.direction === "outgoing")
+
   // The tab badge counts only incoming requests — the ones actually
   // waiting on this user to do something — not outgoing ones too.
   const incomingCount = requests.filter((r) => r.direction === "incoming").length
@@ -247,6 +382,11 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
     { id: "requests", label: incomingCount > 0 ? `Friend Requests (${incomingCount})` : "Friend Requests" },
     { id: "search", label: "Find Friends" },
     { id: "groups", label: "Groups" },
+    {
+      id: "people",
+      label:
+        incomingContactRequests.length > 0 ? `People (${incomingContactRequests.length})` : "People",
+    },
   ]
 
   return (
@@ -472,6 +612,189 @@ export function FriendsExplorer({ token }: FriendsExplorerProps) {
                         )
                       })}
                     </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {tab === "people" && (
+        <div>
+          {(incomingContactRequests.length > 0 || outgoingContactRequests.length > 0) && (
+            <div className="mb-8 space-y-3">
+              {incomingContactRequests.map((r) => (
+                <PersonRow
+                  key={`incoming-${r.contact_id}`}
+                  name={r.other_user.full_name}
+                  username={r.other_user.username}
+                  avatarUrl={r.other_user.profile_picture}
+                  action={
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        wants to link you as their {r.relationship || r.name}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAcceptIncoming(r.contact_id)}
+                        className="bg-logo text-logo-foreground hover:bg-logo/90"
+                      >
+                        <Check className="size-4" /> Accept
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeclineIncoming(r.contact_id)}>
+                        <X className="size-4" /> Decline
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+              {outgoingContactRequests.map((r) => (
+                <PersonRow
+                  key={`outgoing-${r.contact_id}`}
+                  name={r.other_user.full_name}
+                  username={r.other_user.username}
+                  avatarUrl={r.other_user.profile_picture}
+                  action={
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        link request sent for &ldquo;{r.name}&rdquo;
+                      </span>
+                      <Button variant="ghost" size="sm" onClick={() => handleCancelOwnLink(r.contact_id)}>
+                        <X className="size-4" /> Cancel
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="mb-6 flex gap-2">
+            <Input
+              value={newContactName}
+              onChange={(e) => setNewContactName(e.target.value)}
+              placeholder="Name (e.g. A)..."
+              className="rounded-full"
+            />
+            <Input
+              value={newContactRelationship}
+              onChange={(e) => setNewContactRelationship(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateContact()}
+              placeholder="Relationship (e.g. Son)..."
+              className="rounded-full"
+            />
+            <Button onClick={handleCreateContact} disabled={!newContactName.trim()}>
+              <Plus className="size-4" /> Add
+            </Button>
+          </div>
+
+          {contacts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No people yet. Add someone you want to tag in entries, even if they don&apos;t have a
+              Papymory account.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {contacts.map((contact) => (
+                <li key={contact.id} className="rounded-2xl border border-border bg-card p-4">
+                  {editingContactId === contact.id ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        value={editingContactName}
+                        onChange={(e) => setEditingContactName(e.target.value)}
+                        placeholder="Name"
+                        className="w-32 rounded-full"
+                      />
+                      <Input
+                        value={editingContactRelationship}
+                        onChange={(e) => setEditingContactRelationship(e.target.value)}
+                        placeholder="Relationship"
+                        className="w-32 rounded-full"
+                      />
+                      <Input
+                        value={editingContactHandle}
+                        onChange={(e) => setEditingContactHandle(e.target.value)}
+                        placeholder="handle"
+                        className="w-32 rounded-full"
+                      />
+                      <Button size="sm" onClick={() => saveEditContact(contact.id)}>
+                        Save
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingContactId(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-card-foreground">
+                          {contact.name}
+                          {contact.relationship && (
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                              {contact.relationship}
+                            </span>
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          @{contact.handle}
+                          {contact.link_status === "accepted" && contact.linked_user && (
+                            <span className="ml-2 text-logo">Linked to @{contact.linked_user.username}</span>
+                          )}
+                          {contact.link_status === "pending" && contact.linked_user && (
+                            <span className="ml-2">
+                              Link pending with @{contact.linked_user.username}
+                            </span>
+                          )}
+                          {!contact.link_status && <span className="ml-2">Placeholder — not linked</span>}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        {!contact.link_status && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Link to a friend"
+                            onClick={() => setLinkingContactId(linkingContactId === contact.id ? null : contact.id)}
+                          >
+                            <Link2 className="size-4" />
+                          </Button>
+                        )}
+                        <Button size="icon" variant="ghost" onClick={() => startEditContact(contact)} title="Edit">
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteContact(contact.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {linkingContactId === contact.id && (
+                    <div className="mt-3 border-t border-border pt-3">
+                      {friends.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          You need to be friends with the real person first.
+                        </p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {friends.map((f) => (
+                            <li key={f.id} className="flex items-center justify-between py-1 text-sm">
+                              <span className="text-card-foreground">{f.full_name || f.username}</span>
+                              <Button size="sm" variant="outline" onClick={() => handleRequestLink(contact.id, f.id)}>
+                                Request link
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
                 </li>
               ))}

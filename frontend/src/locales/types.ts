@@ -31,6 +31,10 @@ export type ErrorCode =
   | "invalid_group_id"
   | "group_not_found"
   | "not_your_friend"
+  | "invalid_contact_id"
+  | "contact_not_found"
+  | "contact_already_linked"
+  | "handle_taken"
 
 // Phase 1 surfaces only (header, dashboard shell, login, register). Phase 2
 // adds sections here for diary-grid, diary-form, friends-explorer,

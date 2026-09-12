@@ -1,3 +1,15 @@
+// Unified shape for anything the "@" autocomplete can suggest and insert —
+// a real friend (insertText = their username) or a placeholder Contact
+// (insertText = their handle). See MentionAutocomplete/TextElement, which
+// only ever deal in this shape, never FriendUser/Contact directly.
+export interface MentionTarget {
+  key: string
+  insertText: string
+  displayName: string
+  sublabel?: string
+  avatarUrl?: string
+}
+
 // Matches Thai/Latin letters, digits, and underscore — same charset as
 // hashtags, kept in its own file since mentions resolve against friends
 // (not free text) and aren't click-navigable.

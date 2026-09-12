@@ -84,6 +84,41 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 		args = append(args, "@"+regexp.QuoteMeta(username)+`\y`)
 	}
 
+	// A Contact's @handle also counts as a mention once the OTHER party has
+	// approved linking that contact to their real account (see
+	// contact_handler.go) — same friendship + audience/group visibility
+	// rules as a direct @username mention above, just resolved through the
+	// contacts table instead of the viewer's own username. Handles are
+	// constrained (migration 0008's CHECK) to a charset with no regex
+	// metacharacters, so concatenating one directly into the pattern here
+	// is safe. No new $N params needed — only ever references $1 (userID).
+	contactMentionClause := `
+		     OR (
+		       e.audience IN ('public', 'friend')
+		       AND EXISTS (
+		         SELECT 1 FROM contacts ct
+		         WHERE ct.owner_id = e.user_id
+		           AND ct.linked_user_id = $1
+		           AND ct.link_status = 'accepted'
+		           AND e.layout::text ~ ('@' || ct.handle || '\y')
+		       )
+		       AND EXISTS (
+		         SELECT 1 FROM friendships f
+		         WHERE f.status = 'accepted'
+		           AND ((f.requester_id = $1 AND f.addressee_id = e.user_id)
+		             OR (f.addressee_id = $1 AND f.requester_id = e.user_id))
+		       )
+		       AND (
+		         e.audience = 'public'
+		         OR NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = e.id)
+		         OR EXISTS (
+		           SELECT 1 FROM entry_friend_groups efg
+		           JOIN friend_group_members fgm ON fgm.group_id = efg.group_id
+		           WHERE efg.entry_id = e.id AND fgm.friend_user_id = $1
+		         )
+		       )
+		     )`
+
 	// created_date is a "timestamp without time zone" (a naive wall-clock
 	// value, no zone attached) — reading it back through Go's time.Time
 	// would silently stamp it as UTC and shift it when the frontend
@@ -92,7 +127,7 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	query := `SELECT e.id, e.title, e.content, to_char(e.created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(e.created_by, ''), e.images, e.layout, e.audience, e.user_id, COALESCE(u.profile_picture, ''), COALESCE(u.slug, '')
 			  FROM entries e
 			  LEFT JOIN users u ON u.id = e.user_id
-			  WHERE e.user_id = $1` + mergeFriendsClause + `
+			  WHERE e.user_id = $1` + mergeFriendsClause + contactMentionClause + `
 			  ORDER BY e.id DESC LIMIT $2 OFFSET $3`
 
 	rows, err := h.DB.Query(query, args...)

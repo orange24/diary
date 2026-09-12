@@ -120,6 +120,10 @@ const th: Dictionary = {
     invalid_group_id: "กลุ่มไม่ถูกต้อง",
     group_not_found: "ไม่พบกลุ่ม",
     not_your_friend: "คนนั้นไม่ใช่เพื่อนของคุณ",
+    invalid_contact_id: "รายชื่อไม่ถูกต้อง",
+    contact_not_found: "ไม่พบรายชื่อนี้",
+    contact_already_linked: "รายชื่อนี้เชื่อมโยงแล้วหรือรอการยืนยันอยู่",
+    handle_taken: "คุณมีรายชื่อที่ใช้ handle นี้อยู่แล้ว",
   },
 }
 

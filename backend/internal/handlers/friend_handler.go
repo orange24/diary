@@ -300,5 +300,16 @@ func (h *EntryHandler) RemoveFriendship(c *gin.Context) {
 		log.Printf("RemoveFriendship group-cleanup error: %v", err)
 	}
 
+	// Any contact link between these two also depended on the friendship —
+	// revoke it back to a plain placeholder rather than leaving a link (or
+	// a pending request) standing between people who are no longer friends.
+	if _, err := h.DB.Exec(
+		`UPDATE contacts SET linked_user_id = NULL, link_status = NULL
+		 WHERE (owner_id = $1 AND linked_user_id = $2) OR (owner_id = $2 AND linked_user_id = $1)`,
+		requesterID, addresseeID,
+	); err != nil {
+		log.Printf("RemoveFriendship contact-link cleanup error: %v", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Removed"})
 }

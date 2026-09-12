@@ -121,6 +121,10 @@ const en: Dictionary = {
     invalid_group_id: "Invalid group",
     group_not_found: "Group not found",
     not_your_friend: "That person isn't your friend",
+    invalid_contact_id: "Invalid contact",
+    contact_not_found: "Contact not found",
+    contact_already_linked: "This contact is already linked or has a pending link",
+    handle_taken: "You already have a contact with that handle",
   },
 }
 

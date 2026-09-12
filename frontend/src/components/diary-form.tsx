@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
 import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextElement } from "@/types/scrapbook"
 import { createEntry, updateEntry, Entry, EntryAudience } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
 import { FriendGroup, FriendUser, getFriendGroups, getFriends } from "@/services/friends"
+import { Contact, getContacts } from "@/services/contacts"
+import { MentionTarget } from "@/lib/mentions"
 import { useLocale } from "@/context/locale-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -67,8 +69,11 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
     )
     return (initialData?.images || []).filter((src) => !canvasSrcs.has(src))
   })
-  // For the "@" mention autocomplete in the text editor below.
+  // For the "@" mention autocomplete in the text editor below — real
+  // friends plus the author's own placeholder Contacts, merged into one
+  // list right before render (see mentionTargets).
   const [friends, setFriends] = useState<FriendUser[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [audience, setAudience] = useState<EntryAudience>(initialData?.audience ?? "private")
   // Which of the author's friend groups this post is scoped to when
   // audience is "friend" — empty means "all friends" (the default).
@@ -93,7 +98,30 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       .catch(() => {
         /* no groups shown just means everyone posts to "all friends" */
       })
+    getContacts(token)
+      .then(setContacts)
+      .catch(() => {
+        /* autocomplete is a nicety — a failed fetch just means no suggestions */
+      })
   }, [token])
+
+  const mentionTargets = useMemo<MentionTarget[]>(
+    () => [
+      ...friends.map((f) => ({
+        key: `friend-${f.id}`,
+        insertText: f.username,
+        displayName: f.full_name || f.username,
+        avatarUrl: f.profile_picture,
+      })),
+      ...contacts.map((c) => ({
+        key: `contact-${c.id}`,
+        insertText: c.handle,
+        displayName: c.name,
+        sublabel: c.relationship || undefined,
+      })),
+    ],
+    [friends, contacts]
+  )
 
   useEffect(() => {
     setTitle(initialData?.title || "")
@@ -178,7 +206,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
           editable
           token={token}
           onGalleryImageAdded={(url) => setGalleryImages((prev) => [...prev, url])}
-          friends={friends}
+          mentionTargets={mentionTargets}
           hashtagSuggestions={existingHashtags}
         />
       </div>

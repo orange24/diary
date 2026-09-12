@@ -16,7 +16,7 @@ import {
 import { TextElement } from "./TextElement"
 import { ImageElement } from "./ImageElement"
 import { Toolbar } from "./Toolbar"
-import { FriendUser } from "@/services/friends"
+import { MentionTarget } from "@/lib/mentions"
 
 interface ScrapbookEditorProps {
   elements: ScrapElement[]
@@ -26,8 +26,9 @@ interface ScrapbookEditorProps {
   scale?: number
   onGalleryImageAdded?: (url: string) => void
   onHashtagClick?: (tag: string) => void
-  // Friends to suggest when typing "@" inside a text box.
-  friends?: FriendUser[]
+  // Friends and/or placeholder Contacts to suggest when typing "@" inside a
+  // text box.
+  mentionTargets?: MentionTarget[]
   // Hashtags already used elsewhere, suggested when typing "#".
   hashtagSuggestions?: string[]
 }
@@ -40,7 +41,7 @@ export function ScrapbookEditor({
   scale: scaleProp,
   onGalleryImageAdded,
   onHashtagClick,
-  friends,
+  mentionTargets,
   hashtagSuggestions,
 }: ScrapbookEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -279,7 +280,7 @@ export function ScrapbookEditor({
                   onFinishEditing={() => setEditingId(null)}
                   onResize={(size) => updateElement(el.id, size)}
                   onHashtagClick={onHashtagClick}
-                  friends={friends}
+                  mentionTargets={mentionTargets}
                   hashtagSuggestions={hashtagSuggestions}
                 />
               ) : (

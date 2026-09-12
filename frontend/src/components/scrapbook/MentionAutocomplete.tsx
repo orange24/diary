@@ -1,21 +1,21 @@
 "use client"
 
-import { FriendUser } from "@/services/friends"
+import { MentionTarget } from "@/lib/mentions"
 
 interface MentionAutocompleteProps {
   query: string
-  friends: FriendUser[]
+  suggestions: MentionTarget[]
   position: { top: number; left: number }
-  onSelect: (friend: FriendUser) => void
+  onSelect: (target: MentionTarget) => void
 }
 
 // Floating suggestion list anchored at the caret while typing "@" inside a
 // scrapbook text box. onMouseDown (not onClick) + preventDefault stops the
 // contentEditable from losing focus/blurring before the selection commits.
-export function MentionAutocomplete({ query, friends, position, onSelect }: MentionAutocompleteProps) {
+export function MentionAutocomplete({ query, suggestions, position, onSelect }: MentionAutocompleteProps) {
   const q = query.toLowerCase()
-  const matches = friends
-    .filter((f) => f.username.toLowerCase().includes(q) || f.full_name.toLowerCase().includes(q))
+  const matches = suggestions
+    .filter((s) => s.insertText.toLowerCase().includes(q) || s.displayName.toLowerCase().includes(q))
     .slice(0, 6)
 
   if (matches.length === 0) return null
@@ -30,18 +30,21 @@ export function MentionAutocomplete({ query, friends, position, onSelect }: Ment
       className="fixed z-[200] w-60 overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-lg pointer-events-auto"
       style={{ top: position.top, left: position.left }}
     >
-      {matches.map((f) => (
+      {matches.map((s) => (
         <button
-          key={f.id}
+          key={s.key}
           type="button"
           onMouseDown={(e) => {
             e.preventDefault()
-            onSelect(f)
+            onSelect(s)
           }}
           className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent"
         >
-          <span className="truncate font-semibold text-popover-foreground">{f.full_name || f.username}</span>
-          <span className="truncate text-xs text-muted-foreground">@{f.username}</span>
+          <span className="truncate font-semibold text-popover-foreground">{s.displayName}</span>
+          <span className="truncate text-xs text-muted-foreground">
+            @{s.insertText}
+            {s.sublabel ? ` · ${s.sublabel}` : ""}
+          </span>
         </button>
       ))}
     </div>
