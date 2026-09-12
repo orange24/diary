@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon, Check, Eye } from "lucide-react"
+import { BookOpen, LogOut, User, Home, Hash, Users, UserCog, Moon, Check } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,6 +19,29 @@ import { useLocale } from "@/context/locale-context"
 import { SUPPORTED_LOCALES } from "@/locales"
 
 const LOCALE_LABELS: Record<string, string> = { en: "English", th: "ไทย" }
+
+// A detective's hat with an eye peeking out from under the brim — "Nosy"
+// mode's icon. Custom (not in lucide-react), drawn in the same
+// stroke-only style as the other nav icons so it sits consistently
+// alongside them.
+function NosyIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M7 11c0-5.5 2.5-7.8 5-7.8s5 2.3 5 7.8" />
+      <path d="M4 12.5c3-1.5 13-1.5 16 1" />
+      <path d="M8 15.7c1.5-2 6.5-2 8 0-1.5 2-6.5 2-8 0Z" />
+      <circle cx="12" cy="15.7" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
 
 export type DiaryView = "home" | "hashtags" | "friends" | "nosy"
 
@@ -36,11 +59,11 @@ export function DiaryHeader({ onLogout, userName, userAvatar, userSlug, activeVi
   const { setTheme, theme } = useTheme()
   const isDark = theme === "dark"
   const { locale, setLocale, t } = useLocale()
-  const navItems: { view: DiaryView; label: string; icon: typeof Home }[] = [
+  const navItems: { view: DiaryView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { view: "home", label: t("header.navHome"), icon: Home },
     { view: "hashtags", label: t("header.navHashtag"), icon: Hash },
     { view: "friends", label: t("header.navFriends"), icon: Users },
-    { view: "nosy", label: t("header.navNosy"), icon: Eye },
+    { view: "nosy", label: t("header.navNosy"), icon: NosyIcon },
   ]
 
   // สร้างชื่อย่อสำหรับ Avatar (เช่น Watchara Kittikum -> WK)
