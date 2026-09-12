@@ -272,18 +272,33 @@ func (h *EntryHandler) RemoveFriendship(c *gin.Context) {
 		return
 	}
 
-	result, err := h.DB.Exec(
-		`DELETE FROM friendships WHERE id = $1 AND (requester_id = $2 OR addressee_id = $2)`,
+	var requesterID, addresseeID int
+	err = h.DB.QueryRow(
+		`DELETE FROM friendships WHERE id = $1 AND (requester_id = $2 OR addressee_id = $2)
+		 RETURNING requester_id, addressee_id`,
 		friendshipID, userID,
-	)
-	if err != nil {
+	).Scan(&requesterID, &addresseeID)
+	if err == sql.ErrNoRows {
+		apierr.JSON(c, http.StatusNotFound, apierr.FriendshipNotFound, "Friendship not found")
+		return
+	} else if err != nil {
 		log.Printf("RemoveFriendship error: %v", err)
 		apierr.JSON(c, http.StatusInternalServerError, apierr.InternalError, "Something went wrong")
 		return
 	}
-	if rows, _ := result.RowsAffected(); rows == 0 {
-		apierr.JSON(c, http.StatusNotFound, apierr.FriendshipNotFound, "Friendship not found")
-		return
+
+	// No longer friends — drop each side from any of the other's groups.
+	// Not load-bearing for feed visibility (that already re-checks the
+	// friendship), just keeps a group's member list from showing someone
+	// who isn't a friend anymore.
+	if _, err := h.DB.Exec(
+		`DELETE FROM friend_group_members fgm USING friend_groups fg
+		 WHERE fgm.group_id = fg.id
+		   AND ((fg.owner_id = $1 AND fgm.friend_user_id = $2) OR (fg.owner_id = $2 AND fgm.friend_user_id = $1))`,
+		requesterID, addresseeID,
+	); err != nil {
+		log.Printf("RemoveFriendship group-cleanup error: %v", err)
 	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Removed"})
 }

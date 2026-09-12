@@ -28,6 +28,9 @@ export type ErrorCode =
   | "invalid_form_data"
   | "upload_failed"
   | "profile_not_found"
+  | "invalid_group_id"
+  | "group_not_found"
+  | "not_your_friend"
 
 // Phase 1 surfaces only (header, dashboard shell, login, register). Phase 2
 // adds sections here for diary-grid, diary-form, friends-explorer,

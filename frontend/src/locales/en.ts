@@ -118,6 +118,9 @@ const en: Dictionary = {
     invalid_form_data: "Invalid form data",
     upload_failed: "Upload failed",
     profile_not_found: "Profile not found",
+    invalid_group_id: "Invalid group",
+    group_not_found: "Group not found",
+    not_your_friend: "That person isn't your friend",
   },
 }
 

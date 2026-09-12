@@ -6,7 +6,7 @@ import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
 import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextElement } from "@/types/scrapbook"
 import { createEntry, updateEntry, Entry, EntryAudience } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
-import { FriendUser, getFriends } from "@/services/friends"
+import { FriendGroup, FriendUser, getFriendGroups, getFriends } from "@/services/friends"
 import { useLocale } from "@/context/locale-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -70,6 +70,10 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
   // For the "@" mention autocomplete in the text editor below.
   const [friends, setFriends] = useState<FriendUser[]>([])
   const [audience, setAudience] = useState<EntryAudience>(initialData?.audience ?? "private")
+  // Which of the author's friend groups this post is scoped to when
+  // audience is "friend" — empty means "all friends" (the default).
+  const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([])
+  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>(initialData?.friend_group_ids ?? [])
   const [createdDate, setCreatedDate] = useState<string>(() =>
     toDateInputValue(initialData?.created_date ? new Date(initialData.created_date) : new Date())
   )
@@ -84,6 +88,11 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       .catch(() => {
         /* autocomplete is a nicety — a failed fetch just means no suggestions */
       })
+    getFriendGroups(token)
+      .then(setFriendGroups)
+      .catch(() => {
+        /* no groups shown just means everyone posts to "all friends" */
+      })
   }, [token])
 
   useEffect(() => {
@@ -97,6 +106,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
     )
     setGalleryImages((initialData?.images || []).filter((src) => !canvasSrcs.has(src)))
     setAudience(initialData?.audience ?? "private")
+    setSelectedGroupIds(initialData?.friend_group_ids ?? [])
     const initialDateObj = initialData?.created_date ? new Date(initialData.created_date) : new Date()
     setCreatedDate(toDateInputValue(initialDateObj))
     setCreatedTime(toTimeInputValue(initialDateObj))
@@ -122,6 +132,7 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
         created_by: "Watchara",
         layout: { pageWidth: PAGE_WIDTH, elements },
         audience,
+        friend_group_ids: audience === "friend" ? selectedGroupIds : [],
         created_date: `${createdDate}T${createdTime}:00`,
       };
 
@@ -210,6 +221,37 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
             ))}
           </SelectContent>
         </Select>
+
+        {audience === "friend" && friendGroups.length > 0 && (
+          <div className="space-y-2 rounded-xl border border-border p-3">
+            <p className="text-xs text-muted-foreground">
+              Share with everyone, or just specific group(s) — leave none checked for all friends.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {friendGroups.map((g) => {
+                const checked = selectedGroupIds.includes(g.id)
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedGroupIds((prev) =>
+                        checked ? prev.filter((id) => id !== g.id) : [...prev, g.id]
+                      )
+                    }
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      checked
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {g.name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <Button

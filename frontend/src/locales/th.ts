@@ -117,6 +117,9 @@ const th: Dictionary = {
     invalid_form_data: "ข้อมูลฟอร์มไม่ถูกต้อง",
     upload_failed: "อัปโหลดไม่สำเร็จ",
     profile_not_found: "ไม่พบโปรไฟล์",
+    invalid_group_id: "กลุ่มไม่ถูกต้อง",
+    group_not_found: "ไม่พบกลุ่ม",
+    not_your_friend: "คนนั้นไม่ใช่เพื่อนของคุณ",
   },
 }
 

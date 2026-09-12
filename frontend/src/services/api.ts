@@ -32,6 +32,11 @@ export interface Entry {
   // Unique-viewer count. Only populated by getNosyFeed — home-feed entries
   // never carry it, which is what tells a card whether to show the badge.
   view_count?: number;
+  // Which of the author's friend groups this entry is scoped to when
+  // audience === "friend" — empty/absent means "all friends". Only ever
+  // populated for the entry's own owner (GetEntry, create/update response),
+  // never exposed to other viewers.
+  friend_group_ids?: number[];
 }
 
 export interface PublicProfile {

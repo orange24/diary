@@ -49,12 +49,15 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 	_ = h.DB.QueryRow("SELECT username FROM users WHERE id = $1", userID).Scan(&username)
 
 	// Own entries always show. A friend's entry also shows once it (a) is
-	// marked public or friend-visible, (b) tags this user by @username, and
-	// (c) the poster is an accepted friend — so being tagged in someone
-	// else's public post doesn't require friendship, but "friend"-audience
-	// posts still stay within the friend circle. Skipped entirely if the
-	// username lookup failed, rather than risk a pattern that accidentally
-	// matches everything.
+	// marked public or friend-visible, (b) tags this user by @username, (c)
+	// the poster is an accepted friend, and (d) — for friend-visible entries
+	// specifically — this viewer isn't excluded by the author's friend-group
+	// scoping: an entry with no entry_friend_groups rows at all is "all
+	// friends" (unrestricted); one with rows requires the viewer to belong
+	// to at least one of them. Public entries skip (d) entirely — groups
+	// only ever narrow "friend" visibility, never "public". Skipped
+	// entirely if the username lookup failed, rather than risk a pattern
+	// that accidentally matches everything.
 	mergeFriendsClause := ""
 	args := []interface{}{userID, limit, offset}
 	if username != "" {
@@ -67,6 +70,15 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 			         WHERE f.status = 'accepted'
 			           AND ((f.requester_id = $1 AND f.addressee_id = e.user_id)
 			             OR (f.addressee_id = $1 AND f.requester_id = e.user_id))
+			       )
+			       AND (
+			         e.audience = 'public'
+			         OR NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = e.id)
+			         OR EXISTS (
+			           SELECT 1 FROM entry_friend_groups efg
+			           JOIN friend_group_members fgm ON fgm.group_id = efg.group_id
+			           WHERE efg.entry_id = e.id AND fgm.friend_user_id = $1
+			         )
 			       )
 			     )`
 		args = append(args, "@"+regexp.QuoteMeta(username)+`\y`)
@@ -107,6 +119,27 @@ func (h *EntryHandler) GetEntries(c *gin.Context) {
 		entries = append(entries, e)
 	}
 	c.JSON(200, entries)
+}
+
+// setEntryFriendGroups replaces which of the caller's own friend_groups an
+// entry is scoped to. Pass a nil/empty groupIDs to clear scoping entirely
+// (the "all friends" / not-friend-audience state). Any id in groupIDs the
+// caller doesn't own is silently dropped rather than erroring, matching
+// normalizeAudience's "fall back, don't fail" style for client-supplied
+// values.
+func (h *EntryHandler) setEntryFriendGroups(entryID int, userID interface{}, groupIDs []int) error {
+	if _, err := h.DB.Exec(`DELETE FROM entry_friend_groups WHERE entry_id = $1`, entryID); err != nil {
+		return err
+	}
+	if len(groupIDs) == 0 {
+		return nil
+	}
+	_, err := h.DB.Exec(
+		`INSERT INTO entry_friend_groups (entry_id, group_id)
+		 SELECT $1, fg.id FROM friend_groups fg WHERE fg.id = ANY($2) AND fg.owner_id = $3`,
+		entryID, pq.Array(groupIDs), userID,
+	)
+	return err
 }
 
 // 1b. GetNosyFeed: public entries from OTHER users, ranked by unique-viewer
@@ -208,6 +241,18 @@ func (h *EntryHandler) CreateEntry(c *gin.Context) {
 		apierr.JSON(c, 500, apierr.EntryCreateFailed, "Failed to create entry")
 		return
 	}
+
+	// Group scoping only ever applies to "friend"-audience entries — any
+	// group ids sent alongside a different audience are dropped.
+	groupIDsToSet := input.FriendGroupIDs
+	if input.Audience != "friend" {
+		groupIDsToSet = nil
+	}
+	if err := h.setEntryFriendGroups(input.ID, userID, groupIDsToSet); err != nil {
+		log.Printf("CreateEntry group-scope error: %v", err)
+	}
+	input.FriendGroupIDs = groupIDsToSet
+
 	c.JSON(200, input)
 }
 
@@ -271,6 +316,15 @@ func (h *EntryHandler) UpdateEntry(c *gin.Context) {
 		return
 	}
 
+	entryID, _ := strconv.Atoi(id)
+	groupIDsToSet := input.FriendGroupIDs
+	if input.Audience != "friend" {
+		groupIDsToSet = nil
+	}
+	if err := h.setEntryFriendGroups(entryID, userID, groupIDsToSet); err != nil {
+		log.Printf("UpdateEntry group-scope error: %v", err)
+	}
+
 	c.JSON(200, gin.H{"message": "Entry updated successfully"})
 }
 
@@ -280,13 +334,21 @@ func (h *EntryHandler) GetEntry(c *gin.Context) {
 	userID := c.MustGet("user_id")
 	var e models.Entry
 
-	query := `SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), created_by, images, layout, audience
+	query := `SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), created_by, images, layout, audience,
+			  COALESCE((SELECT array_agg(group_id) FROM entry_friend_groups WHERE entry_id = entries.id), ARRAY[]::int[])
 			  FROM entries WHERE id = $1 AND user_id = $2`
 	var layoutStr sql.NullString
+	var groupIDs pq.Int64Array
 	err := h.DB.QueryRow(query, id, userID).
-		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience)
-	if err == nil && layoutStr.Valid {
-		e.Layout = json.RawMessage(layoutStr.String)
+		Scan(&e.ID, &e.Title, &e.Content, &e.CreatedDate, &e.CreatedBy, &e.Images, &layoutStr, &e.Audience, &groupIDs)
+	if err == nil {
+		if layoutStr.Valid {
+			e.Layout = json.RawMessage(layoutStr.String)
+		}
+		e.FriendGroupIDs = make([]int, len(groupIDs))
+		for i, gid := range groupIDs {
+			e.FriendGroupIDs[i] = int(gid)
+		}
 	}
 
 	if err != nil {

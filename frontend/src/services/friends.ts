@@ -21,6 +21,14 @@ export interface FriendRequestItem {
   user: FriendUser
 }
 
+// A group is private to its owner — the friends inside it are never told
+// which group they're in, only whether a given post is visible to them.
+export interface FriendGroup {
+  id: number
+  name: string
+  members: FriendUser[]
+}
+
 export type Relationship = "none" | "friends" | "outgoing" | "incoming"
 
 export interface UserSearchResult extends FriendUser {
@@ -62,3 +70,23 @@ export const acceptFriendRequest = (friendshipId: number, token: string) =>
 
 export const removeFriendship = (friendshipId: number, token: string) =>
   authFetch(`/friends/${friendshipId}`, token, { method: "DELETE" })
+
+export const getFriendGroups = (token: string): Promise<FriendGroup[]> => authFetch("/friend-groups", token)
+
+export const createFriendGroup = (name: string, token: string): Promise<FriendGroup> =>
+  authFetch("/friend-groups", token, { method: "POST", body: JSON.stringify({ name }) })
+
+export const renameFriendGroup = (groupId: number, name: string, token: string) =>
+  authFetch(`/friend-groups/${groupId}`, token, { method: "PUT", body: JSON.stringify({ name }) })
+
+export const deleteFriendGroup = (groupId: number, token: string) =>
+  authFetch(`/friend-groups/${groupId}`, token, { method: "DELETE" })
+
+export const addGroupMember = (groupId: number, friendUserId: number, token: string) =>
+  authFetch(`/friend-groups/${groupId}/members`, token, {
+    method: "POST",
+    body: JSON.stringify({ friend_user_id: friendUserId }),
+  })
+
+export const removeGroupMember = (groupId: number, friendUserId: number, token: string) =>
+  authFetch(`/friend-groups/${groupId}/members/${friendUserId}`, token, { method: "DELETE" })

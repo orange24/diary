@@ -80,6 +80,13 @@ func main() {
 		authorized.POST("/friends/request", entryHandler.SendFriendRequest)
 		authorized.POST("/friends/:id/accept", entryHandler.AcceptFriendRequest)
 		authorized.DELETE("/friends/:id", entryHandler.RemoveFriendship)
+
+		authorized.GET("/friend-groups", entryHandler.ListFriendGroups)
+		authorized.POST("/friend-groups", entryHandler.CreateFriendGroup)
+		authorized.PUT("/friend-groups/:id", entryHandler.RenameFriendGroup)
+		authorized.DELETE("/friend-groups/:id", entryHandler.DeleteFriendGroup)
+		authorized.POST("/friend-groups/:id/members", entryHandler.AddGroupMember)
+		authorized.DELETE("/friend-groups/:id/members/:friend_user_id", entryHandler.RemoveGroupMember)
 	}
 
 	// 4. Start server

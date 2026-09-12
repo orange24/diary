@@ -69,12 +69,29 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 		).Scan(&p.IsFriend)
 	}
 
+	// For a friend's "friend"-audience entries specifically, also honor the
+	// author's friend-group scoping: no entry_friend_groups rows at all
+	// means "all friends" (unrestricted); otherwise the requester must
+	// belong to at least one referenced group. Public entries skip this —
+	// groups only ever narrow "friend" visibility, never "public".
+	groupCheck := ` AND (
+		audience = 'public'
+		OR NOT EXISTS (SELECT 1 FROM entry_friend_groups efg WHERE efg.entry_id = entries.id)
+		OR EXISTS (
+		  SELECT 1 FROM entry_friend_groups efg
+		  JOIN friend_group_members fgm ON fgm.group_id = efg.group_id
+		  WHERE efg.entry_id = entries.id AND fgm.friend_user_id = $2
+		)
+	)`
+
 	var audienceFilter string
+	args := []interface{}{p.ID}
 	switch {
 	case p.IsSelf:
 		audienceFilter = "" // owner sees everything, including private
 	case p.IsFriend:
-		audienceFilter = " AND audience IN ('public', 'friend')"
+		audienceFilter = " AND audience IN ('public', 'friend')" + groupCheck
+		args = append(args, requesterID)
 	default:
 		audienceFilter = " AND audience = 'public'"
 	}
@@ -83,7 +100,7 @@ func (h *EntryHandler) GetPublicProfile(c *gin.Context) {
 		`SELECT id, title, content, to_char(created_date, 'YYYY-MM-DD"T"HH24:MI:SS'), COALESCE(created_by, ''), images, layout, audience, user_id
 		 FROM entries WHERE user_id = $1`+audienceFilter+`
 		 ORDER BY id DESC`,
-		p.ID,
+		args...,
 	)
 	if err != nil {
 		log.Printf("GetPublicProfile entries query error: %v", err)

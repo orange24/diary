@@ -32,6 +32,9 @@ const (
 	InvalidFormData       = "invalid_form_data"
 	UploadFailed          = "upload_failed"
 	ProfileNotFound       = "profile_not_found"
+	InvalidGroupID        = "invalid_group_id"
+	GroupNotFound         = "group_not_found"
+	NotYourFriend         = "not_your_friend"
 )
 
 // JSON responds with both the stable code (for the frontend to translate)

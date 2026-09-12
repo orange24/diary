@@ -28,4 +28,10 @@ type Entry struct {
 	// Unique-viewer count from entry_views — only populated by GetNosyFeed,
 	// which is also the only place that ever writes to entry_views.
 	ViewCount int `json:"view_count,omitempty"`
+	// Which of the author's friend_groups this entry is scoped to when
+	// Audience == "friend" — empty means "all friends". Bound on
+	// create/update, and only ever read back by GetEntry (for the author's
+	// own edit flow) and Create/UpdateEntry's response; never exposed to
+	// other viewers, since a group is private to its owner.
+	FriendGroupIDs []int `json:"friend_group_ids,omitempty"`
 }
