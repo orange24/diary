@@ -271,8 +271,11 @@ export default function DiaryDashboard() {
               <FriendsExplorer token={token} />
             ) : activeView === "nosy" ? (
               <div className={nosyFeedLayout === "single" ? "mx-auto w-full max-w-2xl" : ""}>
-                <div className="mb-3 flex items-center justify-between gap-4">
+                <div className="mb-10">
                   <p className="text-muted-foreground">{t("dashboard.nosyIntro")}</p>
+                </div>
+
+                <div className="mb-3 flex justify-end">
                   <ToggleGroup
                     type="single"
                     variant="outline"
