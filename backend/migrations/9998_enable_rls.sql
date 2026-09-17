@@ -9,6 +9,16 @@
 -- Without this, anyone with the project's anon API key could read/write/
 -- delete every row in every table below directly over HTTP, including
 -- users.password (bcrypt hashes) and every other user's personal info.
+--
+-- MUST BE RUN AGAINST BOTH DATABASES IN THIS SUPABASE PROJECT: the app's
+-- own DATABASE_URL points at a custom `diary` database (all statements
+-- below apply there), but Supabase's PostgREST API and Security Advisor
+-- operate against the project's default `postgres` database instead —
+-- which turned out to have its own separate (and populated) `users` and
+-- `entries` tables, unrelated to the app's data, that were the actually-
+-- exposed surface. Run this file's ALTERs a second time connected to
+-- `postgres` for just `users` and `entries` (the only two tables that
+-- exist there) to close that gap too.
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE entries ENABLE ROW LEVEL SECURITY;
