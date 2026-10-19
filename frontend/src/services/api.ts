@@ -1,7 +1,7 @@
 // frontend/src/services/api.ts
 
 import { ScrapbookLayout } from "@/types/scrapbook";
-import { apiError } from "@/lib/api-error";
+import { ApiError, apiError } from "@/lib/api-error";
 
 // ✅ แก้ไขพอร์ตให้ตรงกับ Docker (9090)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9090";
@@ -72,15 +72,21 @@ export const getEntries = async (page: number, limit: number, token: string): Pr
     });
 
     if (!res.ok) {
-      // ถ้า Error (401, 500) ให้ส่ง Array ว่างกลับไป ไม่ให้หน้าจอขาว
-      console.error("API Error Status:", res.status);
-      return []; 
+      // เดิมตรงนี้ return [] เงียบ ๆ เพื่อ "ไม่ให้หน้าจอขาว" แต่ผลคือ session
+      // หมดอายุ (401) หน้าตาเหมือนกับ "ยังไม่มีบันทึกสักอัน" เป๊ะ — ผู้ใช้ไม่ถูก
+      // พากลับไปหน้า login และไม่มีอะไรบอกว่าเกิดอะไรขึ้น ตอนนี้โยน ApiError
+      // เหมือนฟังก์ชันอื่นทั้งไฟล์ แล้วให้ฝั่งที่เรียกตัดสินใจว่าจะทำอะไรต่อ
+      const errorData = await res.json().catch(() => null);
+      throw apiError(errorData, `Failed to load entries: ${res.status}`, res.status);
     }
 
     const data = await res.json();
     // ✅ มั่นใจว่าต้องส่งกลับเป็น Array เท่านั้น
     return Array.isArray(data) ? data : []; 
   } catch (error) {
+    // A failed response is a decision for the caller (see above); only a
+    // genuine network/parse failure still degrades to an empty feed.
+    if (error instanceof ApiError) throw error;
     console.error("Network Error:", error);
     return []; // 👈 กันพัง
   }

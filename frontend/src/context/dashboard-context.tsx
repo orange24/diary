@@ -58,7 +58,7 @@ export function useDashboard() {
 }
 
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
-  const { token, user } = useAuth()
+  const { token, user, handleLogout } = useAuth()
   const { t } = useLocale()
   const router = useRouter()
   const pathname = usePathname()
@@ -100,14 +100,21 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setPage(reset ? 2 : page + 1)
       } catch (error: any) {
         console.error("Load error:", error)
-        if (error?.status === 401) router.push("/login")
+        // The session is gone (token expired, or revoked server-side). Drop
+        // the dead token on the way out, otherwise every later navigation
+        // retries with it and lands back here.
+        if (error?.status === 401) {
+          handleLogout()
+          router.push("/login")
+          return
+        }
         if (reset) setEntries([])
       } finally {
         loadingRef.current = false
         setLoading(false)
       }
     },
-    [token, page, hasMore, router]
+    [token, page, hasMore, router, handleLogout]
   )
 
   // Primes the shared feed once a token is available, regardless of which
