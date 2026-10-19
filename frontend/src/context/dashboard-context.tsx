@@ -67,13 +67,22 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(false)
+  // In-flight guard. Deliberately a ref, not the `loading` state above:
+  // two calls fired from the same render (StrictMode's double-invoked
+  // mount effect, or the scroll observer firing twice before a repaint)
+  // both read the same stale `loading === false` closure and sail past a
+  // state-based check, each appending page 1 again — duplicate entries,
+  // duplicate React keys. A ref is read fresh on every call, so the
+  // second one returns here.
+  const loadingRef = useRef(false)
   const [feedLayout, setFeedLayout] = useState<"grid" | "single">("single")
 
   const loadMoreEntries = useCallback(
     async (reset = false) => {
-      if (!token || loading) return
+      if (!token || loadingRef.current) return
       if (!reset && !hasMore) return
 
+      loadingRef.current = true
       setLoading(true)
       try {
         const currentPage = reset ? 1 : page
@@ -94,10 +103,11 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         if (error?.status === 401) router.push("/login")
         if (reset) setEntries([])
       } finally {
+        loadingRef.current = false
         setLoading(false)
       }
     },
-    [token, page, hasMore, loading, router]
+    [token, page, hasMore, router]
   )
 
   // Primes the shared feed once a token is available, regardless of which
