@@ -14,7 +14,12 @@
 substitutions:
   _REGION: asia-southeast1
   _SERVICE: diary-frontend
-  _IMAGE: asia-southeast1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/diary-frontend
+  # No _IMAGE substitution here on purpose: Cloud Build does not expand
+  # built-in substitutions (PROJECT_ID, BUILD_ID) inside the *values* of
+  # user ones, so the literal "${PROJECT_ID}" reaches docker and it rejects
+  # the tag as "repository name must be lowercase". The image path is spelled
+  # out in each step below instead, where expansion does happen.
+  _REPO: asia-southeast1-docker.pkg.dev
   _API_BASE_URL: https://diary-backend-847701498835.asia-southeast1.run.app
   _STORED_URL: https://diary-backend-847701498835.asia-southeast1.run.app
 
@@ -25,13 +30,13 @@ steps:
       - build
       - --build-arg=NEXT_PUBLIC_API_BASE_URL=${_API_BASE_URL}
       - --build-arg=NEXT_PUBLIC_STORED_URL=${_STORED_URL}
-      - --tag=${_IMAGE}:${BUILD_ID}
-      - --tag=${_IMAGE}:latest
+      - --tag=${_REPO}/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE}:$BUILD_ID
+      - --tag=${_REPO}/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE}:latest
       - frontend
 
   - id: push
     name: gcr.io/cloud-builders/docker
-    args: [push, --all-tags, "${_IMAGE}"]
+    args: [push, --all-tags, "${_REPO}/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE}"]
 
   # Deploys the exact image this build produced, not :latest — so a rollback
   # is "deploy the previous revision", not "hope :latest still points there".
@@ -42,7 +47,7 @@ steps:
       - run
       - deploy
       - ${_SERVICE}
-      - --image=${_IMAGE}:${BUILD_ID}
+      - --image=${_REPO}/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE}:$BUILD_ID
       - --region=${_REGION}
       - --platform=managed
 
