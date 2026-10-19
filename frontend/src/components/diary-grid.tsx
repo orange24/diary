@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MoreVertical, User } from "lucide-react"
 import { Entry } from "@/services/api"
-// ✅ 1. Import DOMPurify
-import DOMPurify from "isomorphic-dompurify"
+import { sanitizeEntryContent, hasRenderableContent } from "@/lib/entry-content"
 import { ScrapbookPreview } from "@/components/scrapbook/ScrapbookPreview"
 import { GalleryMosaic } from "@/components/gallery-mosaic"
 import { isVideo, getDisplayMedia } from "@/lib/media-utils"
@@ -39,16 +38,9 @@ interface DiaryGridProps {
   layout?: "grid" | "single"
 }
 
-// ✅ 2. สร้าง Helper Function สำหรับกรอง HTML (วางไว้นอก Component)
-const getCleanHtml = (html: string) => {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
-      'h1', 'h2', 'h3', 'code', 'pre', 'span', 'blockquote'
-    ],
-    ALLOWED_ATTR: ['href', 'target', 'class']
-  });
-};
+// ✅ 2. กรอง HTML ด้วย allowlist กลางที่ใช้ร่วมกับ editor และการ์ดเดี่ยว
+// (allowlist เดิมตรงนี้ไม่ยอมให้ <img> ผ่าน emoji ที่แทรกในข้อความจึงหายไป)
+const getCleanHtml = (html: string) => sanitizeEntryContent(html)
 
 // True once any text box actually has content — an entry with only
 // image/sticker elements (no writing at all) gets shown as a plain photo
@@ -156,8 +148,10 @@ export function DiaryGrid({
         // take priority when both exist; otherwise fall back to whatever
         // was uploaded straight to the gallery (e.g. a blank page with
         // just a gallery photo added, no canvas elements at all).
-        const legacyTextContent = entry.content?.replace(/<[^>]*>/g, "").trim() ?? ""
-        const hasWrittenText = hasVisibleText(elements) || legacyTextContent.length > 0
+        // hasRenderableContent (not a tag-strip) so an entry written as
+        // nothing but an inline emoji still counts as writing, rather than
+        // falling through to the image-only photo card below.
+        const hasWrittenText = hasVisibleText(elements) || hasRenderableContent(entry.content)
         const imageOnlySrcs = canvasImageElements.length > 0 ? canvasImageElements.map((el) => el.src) : entry.images
         const isImageOnly = !hasWrittenText && (canvasImageElements.length > 0 || hasImages)
         // A friend's entry merged into this feed (because it tags this

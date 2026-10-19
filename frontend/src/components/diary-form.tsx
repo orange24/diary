@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrapbookEditor } from "@/components/scrapbook/ScrapbookEditor"
+import { SimpleContentEditor } from "@/components/simple-content-editor"
 import { ScrapElement, ImageScrapElement, PAGE_WIDTH, createPlaceholderTextElement } from "@/types/scrapbook"
 import { createEntry, updateEntry, Entry } from "@/services/api"
 import { getEntryPlaceholderText } from "@/lib/entry-placeholder"
@@ -51,6 +52,15 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       ? initialData.layout?.elements || []
       : [createPlaceholderTextElement(getEntryPlaceholderText(t, userName))]
   )
+  // Which editor this entry is being written in. The simple box is the
+  // default for anything new; the scrapbook canvas is kept as the fallback
+  // for people who want to place things freely, and an existing entry
+  // always reopens in whichever one actually holds its content.
+  const [mode, setMode] = useState<"simple" | "scrapbook">(() =>
+    (initialData?.layout?.elements?.length ?? 0) > 0 ? "scrapbook" : "simple"
+  )
+  const [content, setContent] = useState<string>(initialData?.content || "")
+
   // Images added via the gallery button never become canvas elements, so they
   // can't be recovered from `elements` on edit — reconstruct them as whatever
   // in initialData.images isn't already represented by an image element.
@@ -144,12 +154,19 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       // gallery, not everything placed on the canvas.
       const images = galleryImages
 
+      // Exactly one of the two carries the writing: the simple box stores
+      // HTML in `content` (which the feed already knows how to render), the
+      // canvas stores positioned elements in `layout`. Whichever mode isn't
+      // in use is cleared, so switching modes on an edit doesn't leave the
+      // old copy behind for the feed to show instead.
+      const isSimple = mode === "simple"
+
       const payload = {
         title,
-        content: "",
+        content: isSimple ? content : "",
         images,
         created_by: "Watchara",
-        layout: { pageWidth: PAGE_WIDTH, elements },
+        layout: { pageWidth: PAGE_WIDTH, elements: isSimple ? [] : elements },
         friend_group_ids: selectedGroupIds,
         created_date: `${createdDate}T${createdTime}:00`,
       };
@@ -189,16 +206,51 @@ export function DiaryForm({ onSuccess, initialData, token, userId, userName, exi
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">Decorate your page</label>
-        <ScrapbookEditor
-          elements={elements}
-          onChange={setElements}
-          editable
-          token={token}
-          onGalleryImageAdded={(url) => setGalleryImages((prev) => [...prev, url])}
-          mentionTargets={mentionTargets}
-          hashtagSuggestions={existingHashtags}
-        />
+        <div className="flex items-center justify-between gap-3">
+          <label className="text-sm font-semibold text-foreground">
+            {mode === "simple" ? "What's on your mind" : "Decorate your page"}
+          </label>
+          <div className="flex rounded-full border border-border p-0.5 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setMode("simple")}
+              className={`rounded-full px-3 py-1 transition-colors ${
+                mode === "simple" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Simple
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("scrapbook")}
+              className={`rounded-full px-3 py-1 transition-colors ${
+                mode === "scrapbook" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Scrapbook
+            </button>
+          </div>
+        </div>
+
+        {mode === "simple" ? (
+          <SimpleContentEditor
+            value={content}
+            onChange={setContent}
+            placeholder={getEntryPlaceholderText(t, userName)}
+            token={token}
+            onImageUploaded={(url) => setGalleryImages((prev) => [...prev, url])}
+          />
+        ) : (
+          <ScrapbookEditor
+            elements={elements}
+            onChange={setElements}
+            editable
+            token={token}
+            onGalleryImageAdded={(url) => setGalleryImages((prev) => [...prev, url])}
+            mentionTargets={mentionTargets}
+            hashtagSuggestions={existingHashtags}
+          />
+        )}
       </div>
 
       {galleryImages.length > 0 && (

@@ -92,6 +92,30 @@ export const getEntries = async (page: number, limit: number, token: string): Pr
   }
 }
 
+// Uploads one image/video to Cloudinary via the backend and returns its
+// hosted URL. The scrapbook editor has its own inline copy of this call;
+// this one exists so the simple editor doesn't need to grow a second one.
+export const uploadMedia = async (file: File, token: string): Promise<string> => {
+  const formData = new FormData();
+  formData.append("media", file);
+
+  const res = await fetch(`${API_BASE_URL}/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw apiError(errorData, `Failed to upload: ${res.status}`, res.status);
+  }
+
+  const data = await res.json();
+  const url = data.paths?.[0];
+  if (!url) throw new ApiError("Upload succeeded but returned no URL");
+  return url;
+};
+
 // 2. ดึงข้อมูลบันทึกตัวเดียว
 export const getEntry = async (id: number, token: string): Promise<Entry> => {
   const response = await fetch(`${API_BASE_URL}/entries/${id}`, {
