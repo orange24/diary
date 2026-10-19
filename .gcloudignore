@@ -1,0 +1,17 @@
+# Keeps `gcloud builds submit` from uploading the repo's heavy, rebuildable
+# and secret-bearing parts. Without this gcloud derives one from .gitignore,
+# which is close but leaves .git itself (large, and pointless in a build).
+.git/
+.gitignore
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+.env
+.env.*
+**/.env
+**/.env.*
+backend/tmp/
+backend/uploads/
+docs/
+*.sql

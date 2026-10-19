@@ -1,0 +1,53 @@
+# Builds and deploys the Next.js frontend to Cloud Run.
+#
+# This file exists for one reason: NEXT_PUBLIC_* values are inlined into the
+# client bundle at build time (frontend/Dockerfile says so too), and
+# `gcloud run deploy --source` has no way to pass docker build args. Built
+# without them, API_BASE_URL falls back to the http://localhost:9090 default
+# in services/api.ts, and the deployed site calls the visitor's own machine
+# instead of the API — a build that succeeds and a site that is entirely
+# broken. Passing them here is the whole point.
+#
+# Usage, from the repo root:
+#   gcloud builds submit --config cloudbuild.yaml --project my-diary-project-490316 .
+
+substitutions:
+  _REGION: asia-southeast1
+  _SERVICE: diary-frontend
+  _IMAGE: asia-southeast1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/diary-frontend
+  _API_BASE_URL: https://diary-backend-847701498835.asia-southeast1.run.app
+  _STORED_URL: https://diary-backend-847701498835.asia-southeast1.run.app
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg=NEXT_PUBLIC_API_BASE_URL=${_API_BASE_URL}
+      - --build-arg=NEXT_PUBLIC_STORED_URL=${_STORED_URL}
+      - --tag=${_IMAGE}:${BUILD_ID}
+      - --tag=${_IMAGE}:latest
+      - frontend
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, --all-tags, "${_IMAGE}"]
+
+  # Deploys the exact image this build produced, not :latest — so a rollback
+  # is "deploy the previous revision", not "hope :latest still points there".
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_IMAGE}:${BUILD_ID}
+      - --region=${_REGION}
+      - --platform=managed
+
+# npm install + next build on a cold builder runs well past the 10m default.
+timeout: 1800s
+
+options:
+  logging: CLOUD_LOGGING_ONLY
